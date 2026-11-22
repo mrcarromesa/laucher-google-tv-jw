@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="56dp"
+    android:viewportWidth="32"
+    android:viewportHeight="56">
+    <!-- Left vertical bar -->
+    <path
+        android:fillColor="#E50914"
+        android:pathData="M0,0 H8.5 V56 H0 Z"/>
+    <!-- Right vertical bar -->
+    <path
+        android:fillColor="#E50914"
+        android:pathData="M23.5,0 H32 V56 H23.5 Z"/>
+    <!-- Diagonal ribbon with shadow -->
+    <path
+        android:fillColor="#B81D24"
+        android:pathData="M0,0 H9 L32,56 H23 Z"/>
+</vector>

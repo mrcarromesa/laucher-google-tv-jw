@@ -1,0 +1,35 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="72dp"
+    android:height="72dp"
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+    <!-- Bright golden sun -->
+    <path
+        android:fillColor="#FFA726"
+        android:pathData="M36,36m-18,0a18,18 0 1,0 36,0a18,18 0 1,0 -36,0"/>
+    <!-- Sun rays -->
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M36,6L39,15L33,15Z"/>
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M36,66L39,57L33,57Z"/>
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M6,36L15,33L15,39Z"/>
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M66,36L57,33L57,39Z"/>
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M14.8,14.8L23.2,19L19,23.2Z"/>
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M57.2,57.2L48.8,53L53,48.8Z"/>
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M14.8,57.2L19,48.8L23.2,53Z"/>
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M57.2,14.8L53,23.2L48.8,19Z"/>
+</vector>

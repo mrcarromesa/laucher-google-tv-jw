@@ -45,6 +45,7 @@ data class HomeUiState(
 /** Diálogo modal do Home (contracts/ui-behavior.md §3). */
 sealed interface HomeDialog {
   data class AppMissing(val appName: String) : HomeDialog
+  data object SetAsHome : HomeDialog
 }
 
 /** Alvo de restauração do foco ao (re)compor o Home. */
@@ -168,6 +169,39 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
   /** Voltar em Home não faz nada (é o HOME). */
   fun onBack() = goHome()
+
+  fun openAllApps() {
+    _screen.value = Screen.AllApps
+  }
+
+  fun openSettings() {
+    try {
+      val intent = Intent(android.provider.Settings.ACTION_SETTINGS).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      }
+      appContext.startActivity(intent)
+    } catch (_: Exception) {}
+  }
+
+  fun openSearch() {
+    try {
+      val intent = Intent(Intent.ACTION_ASSIST).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      }
+      appContext.startActivity(intent)
+    } catch (_: Exception) {
+      try {
+        val searchIntent = Intent(Intent.ACTION_SEARCH).apply {
+          addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        appContext.startActivity(searchIntent)
+      } catch (_: Exception) {}
+    }
+  }
+
+  fun showSetAsHomeDialog() {
+    _dialog.value = HomeDialog.SetAsHome
+  }
 
   // --- Ações do dock (contracts/app-catalog.md §3–§4) ---
 
