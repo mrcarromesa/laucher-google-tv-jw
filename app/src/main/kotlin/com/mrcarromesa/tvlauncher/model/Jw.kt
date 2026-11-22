@@ -1,9 +1,7 @@
 package com.mrcarromesa.tvlauncher.model
 
 import com.mrcarromesa.tvlauncher.data.InstantMillisSerializer
-import com.mrcarromesa.tvlauncher.data.LocalDateIsoSerializer
 import java.time.Instant
-import java.time.LocalDate
 import kotlinx.serialization.Serializable
 
 /**
@@ -12,21 +10,11 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class JwSnapshot(
-  val whatsNew: JwTextEntry? = null,
   val dailyText: JwDailyText? = null,
   val broadcasting: JwVideoEntry? = null,
   val governingBody: JwVideoEntry? = null,
   @Serializable(with = InstantMillisSerializer::class)
   val fetchedAt: Instant,
-)
-
-@Serializable
-data class JwTextEntry(
-  val title: String,
-  val pageUrl: String,
-  val imageUrl: String? = null,
-  @Serializable(with = LocalDateIsoSerializer::class)
-  val publishedOn: LocalDate? = null,
 )
 
 @Serializable

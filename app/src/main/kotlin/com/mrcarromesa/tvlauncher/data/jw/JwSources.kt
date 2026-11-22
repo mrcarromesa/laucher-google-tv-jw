@@ -3,7 +3,6 @@ package com.mrcarromesa.tvlauncher.data.jw
 import com.mrcarromesa.tvlauncher.data.FetchResult
 import com.mrcarromesa.tvlauncher.data.Http
 import com.mrcarromesa.tvlauncher.model.JwDailyText
-import com.mrcarromesa.tvlauncher.model.JwTextEntry
 import com.mrcarromesa.tvlauncher.model.JwVideoEntry
 import java.net.URI
 import java.time.Instant
@@ -21,8 +20,8 @@ sealed interface ParseResult<out T> {
 }
 
 /**
- * Quatro fontes do jw.org (contracts/jw-sources.md, R3):
- * novidades e texto do dia em HTML; Broadcasting e Boletim pelo mediator API.
+ * Fontes do jw.org (contracts/jw-sources.md, R3):
+ * texto do dia em HTML; Broadcasting e Boletim pelo mediator API.
  * Cada parser valida os campos mínimos; em falha devolve `ParseFailure`
  * (o repositório mantém o cache e a data anteriores).
  */
@@ -32,9 +31,6 @@ class JwSources(private val http: Http) {
 
   // --- fontes (HTTP) ---
 
-  suspend fun fetchWhatsNew(): ParseResult<JwTextEntry> =
-    parseFrom(getText(WHATSNEW_URL)) { parseWhatsNew(it) }
-
   suspend fun fetchDailyText(): ParseResult<JwDailyText> =
     parseFrom(getText(WOL_DAILY_URL)) { parseDailyText(it) }
 
@@ -43,32 +39,6 @@ class JwSources(private val http: Http) {
 
   suspend fun fetchGoverningBody(): ParseResult<JwVideoEntry> =
     parseFrom(getText(STUDIO_NEWS_URL, "application/json")) { parseStudioNews(it) }
-
-  // --- parser HTML: novidades (contracts/jw-sources.md §1) ---
-
-  fun parseWhatsNew(body: String): ParseResult<JwTextEntry> {
-    val blockPattern = Regex("""(?s)<div class="([^"]*synopsis[^"]*docId-\d+[^"]*)">(.*?)(?=<div class="[^"]*synopsis|\z)""")
-    for (match in blockPattern.findAll(body)) {
-      val block = match.groupValues[2]
-      val pubDate = Regex("""(?s)<p class="meta pubDate">\s*(\d{4}-\d{2}-\d{2})\s*</p>""").find(block)?.groupValues?.get(1)
-      val link = Regex("""(?s)<h3>\s*<a href="([^"]+)"[^>]*>(.*?)</a>\s*</h3>""").find(block)
-      if (pubDate == null || link == null) continue
-      val href = link.groupValues[1]
-      val resolved = resolveJwOrg(href) ?: continue
-      val title = stripTags(link.groupValues[2]).trim()
-      val imageUrl = Regex("""data-img-size-md='([^']+)'""").find(block)?.groupValues?.get(1)
-      if (title.isEmpty()) continue
-      return ParseResult.Ok(
-        JwTextEntry(
-          title = title,
-          pageUrl = resolved,
-          imageUrl = imageUrl,
-          publishedOn = LocalDate.parse(pubDate),
-        ),
-      )
-    }
-    return ParseResult.ParseFailure
-  }
 
   // --- parser HTML: texto do dia (contracts/jw-sources.md §2) ---
 
@@ -183,12 +153,6 @@ class JwSources(private val http: Http) {
   private fun firstGroup(html: String, pattern: String): String? =
     Regex(pattern).find(html)?.groupValues?.get(1)
 
-  private fun resolveJwOrg(href: String): String? {
-    val uri = runCatching { URI(href) }.getOrNull() ?: return null
-    if (uri.isAbsolute) return if (uri.host == "www.jw.org") href else null
-    return "https://www.jw.org" + href
-  }
-
   private fun isJwCdn(url: String): Boolean =
     runCatching { URI(url).host?.endsWith(".jw-cdn.org") ?: false }.getOrDefault(false)
 
@@ -196,7 +160,7 @@ class JwSources(private val http: Http) {
     value?.let { runCatching { Instant.parse(it) }.getOrNull() }
 
   companion object {
-    const val WHATSNEW_URL = "https://www.jw.org/pt/novidades/"
+    const val JW_HOME_URL = "https://www.jw.org/"
     const val WOL_DAILY_URL = "https://wol.jw.org/pt/wol/h/r5/lp-t"
     const val LATEST_VIDEOS_URL =
       "https://b.jw-cdn.org/apis/mediator/v1/categories/T/LatestVideos?detailed=1&clientType=www"

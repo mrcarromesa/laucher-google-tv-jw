@@ -55,6 +55,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.mrcarromesa.tvlauncher.R
+import com.mrcarromesa.tvlauncher.data.jw.JwSources
 import com.mrcarromesa.tvlauncher.data.jw.JwState
 import com.mrcarromesa.tvlauncher.data.weather.WeatherCode
 import com.mrcarromesa.tvlauncher.data.weather.WeatherState
@@ -678,7 +679,7 @@ private fun JwContent(
           onRight = {},
           onDown = { jwRequesters[1].requestFocus() },
           onEnter = {
-            snapshot.whatsNew?.pageUrl?.let { onJwEntryClick(JwEntryData.Text(it)) }
+            onJwEntryClick(JwEntryData.Text(JwSources.JW_HOME_URL))
           },
         )
         .onFocusChanged { if (it.isFocused) onJwFocus(0) }
@@ -732,7 +733,7 @@ private fun JwContent(
         onUp = { jwRequesters[0].requestFocus() },
         onDown = { dockRequesters[dockFocusIndex.coerceIn(0, DOCK_SIZE - 1)].requestFocus() },
         onClick = {
-          val url = snapshot.dailyText?.pageUrl ?: snapshot.whatsNew?.pageUrl
+          val url = snapshot.dailyText?.pageUrl
           if (url != null) onJwEntryClick(JwEntryData.Text(url))
         },
         modifier = Modifier

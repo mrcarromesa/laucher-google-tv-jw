@@ -67,15 +67,13 @@ class JwRepository(
         val previous = _state.value
         val previousSnapshot = (previous as? JwState.Available)?.snapshot ?: readCache()
 
-        val whatsNew = runCatching { sources.fetchWhatsNew() }.getOrDefault(ParseResult.ParseFailure)
         val dailyText = runCatching { sources.fetchDailyText() }.getOrDefault(ParseResult.ParseFailure)
         val broadcasting = runCatching { sources.fetchBroadcasting() }.getOrDefault(ParseResult.ParseFailure)
         val governingBody = runCatching { sources.fetchGoverningBody() }.getOrDefault(ParseResult.ParseFailure)
 
         // Falha total (nomeadamente sem rede): mantém o último snapshot como está.
         val anySuccess =
-          whatsNew is ParseResult.Ok || dailyText is ParseResult.Ok ||
-            broadcasting is ParseResult.Ok || governingBody is ParseResult.Ok
+          dailyText is ParseResult.Ok || broadcasting is ParseResult.Ok || governingBody is ParseResult.Ok
         if (!anySuccess) {
           if (previousSnapshot != null) {
             _state.value = JwState.Available(previousSnapshot, Duration.between(previousSnapshot.fetchedAt, now))
@@ -88,7 +86,6 @@ class JwRepository(
         // Fusão campo a campo: uma fonte falhada mantém o valor antigo desse campo.
         val merged =
           JwSnapshot(
-            whatsNew = (whatsNew as? ParseResult.Ok)?.value ?: previousSnapshot?.whatsNew,
             dailyText = (dailyText as? ParseResult.Ok)?.value ?: previousSnapshot?.dailyText,
             broadcasting = (broadcasting as? ParseResult.Ok)?.value ?: previousSnapshot?.broadcasting,
             governingBody = (governingBody as? ParseResult.Ok)?.value ?: previousSnapshot?.governingBody,
