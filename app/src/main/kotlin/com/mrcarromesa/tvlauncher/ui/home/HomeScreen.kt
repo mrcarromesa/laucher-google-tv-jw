@@ -1193,9 +1193,9 @@ private fun DockCard(
         }
       }
 
-      // Todos os Apps: Grade 3x3 simétrica e texto "Todos os Apps"
+      // Todos os Apps: Apenas o ícone de 9 pontos centralizado (sem texto)
       DockItem.AllApps -> {
-        Column(
+        Box(
           modifier = Modifier
             .fillMaxSize()
             .glassPanel(
@@ -1204,20 +1204,12 @@ private fun DockCard(
               bgAlphaTop = 0.38f,
               bgAlphaBottom = 0.20f,
             ),
-          horizontalAlignment = Alignment.CenterHorizontally,
-          verticalArrangement = Arrangement.Center,
+          contentAlignment = Alignment.Center,
         ) {
           Image(
             painter = painterResource(R.drawable.ic_apps_grid),
             contentDescription = item.label,
-            modifier = Modifier.size(28.dp),
-          )
-          Spacer(Modifier.height(8.dp))
-          Text(
-            text = item.label,
-            color = Color.White,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.size(36.dp),
           )
         }
       }
