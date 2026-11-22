@@ -26,7 +26,9 @@ sealed interface JwState {
  * (contracts/jw-sources.md §7, R7):
  * - snapshot novo funde-se campo a campo com o anterior: uma fonte falhada mantém
  *   o valor antigo desse campo;
- * - atualizar no arranque/volta ao ecrã e a cada 6 h enquanto visível;
+ * - atualizar no arranque/volta ao ecrã e a cada 6 h enquanto visível; o regresso ao
+ *   ecrã faz refresh completo (novidades, texto do dia, vídeos); à meia-noite local
+ *   um refresh completo renova o texto do dia;
  * - falha de rede/HTTP≠200/parsing ⇒ `ParseFailure`, sem escrever cache nem
  *   `fetchedAt`;
  * - cache > 24 h ⇒ painel `Unavailable` com a data do último sucesso.

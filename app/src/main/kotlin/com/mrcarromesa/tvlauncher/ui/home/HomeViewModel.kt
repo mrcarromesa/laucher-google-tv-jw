@@ -23,6 +23,7 @@ import com.mrcarromesa.tvlauncher.data.weather.WeatherSources
 import com.mrcarromesa.tvlauncher.model.DockItem
 import com.mrcarromesa.tvlauncher.model.InstalledApp
 import com.mrcarromesa.tvlauncher.ui.Screen
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -31,6 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharingStarted
 
@@ -129,6 +131,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         kotlinx.coroutines.delay(60_000L)
       }
     }
+    // Renova o texto do dia logo após a meia-noite local, enquanto o processo vive.
+    // TV desligada à meia-noite: o refresh do onResume seguinte cobre esse caso.
+    viewModelScope.launch {
+      while (true) {
+        val now = LocalDateTime.now()
+        val nextMidnight = now.toLocalDate().plusDays(1).atTime(0, 0, 1)
+        delay(Duration.between(now, nextMidnight).toMillis().coerceAtLeast(1_000L))
+        jwRepository.refresh()
+      }
+    }
   }
 
   /** Chamado pela activity ao voltar a estar visível (volta de app / primeiro arranque). */
@@ -136,7 +148,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     _launching.value = false
     _isHome.value = homeRole.isHome()
     weatherRepository.tick()
-    jwRepository.tick()
+    // Volta ao ecrã ⇒ refresh completo (novidades, texto do dia, Broadcasting, Boletim).
+    jwRepository.refresh()
   }
 
   // --- Foco (contracts/ui-behavior.md §2) ---

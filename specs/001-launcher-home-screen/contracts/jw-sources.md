@@ -112,7 +112,9 @@ Nunca usar `video/3gpp`, HLS ou `progressiveDownloadURL` de outro domínio que n
 - Snapshot novo funde-se campo a campo com o anterior: uma fonte falhada mantém o
   valor antigo desse campo.
 - Atualizar no arranque/volta ao ecrã e a cada 6 h enquanto visível (SC-007 pede
-  ≥ 1×/dia).
+  ≥ 1×/dia). O regresso ao ecrã faz refresh completo (novidades, texto do dia,
+  Broadcasting, Boletim); à meia-noite local (00:00:01), refresh completo renova o
+  texto do dia.
 - Cache > 24 h ⇒ painel `Unavailable` com a data do último sucesso.
 - Nunca mostrar mensagens de erro técnicas; a idade do conteúdo é a informação.
 
