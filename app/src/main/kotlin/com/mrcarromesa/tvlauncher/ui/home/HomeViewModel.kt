@@ -1,6 +1,7 @@
 package com.mrcarromesa.tvlauncher.ui.home
 
 import android.app.Application
+import android.app.SearchManager
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -46,6 +47,8 @@ data class HomeUiState(
 sealed interface HomeDialog {
   data class AppMissing(val appName: String) : HomeDialog
   data object SetAsHome : HomeDialog
+  /** Diálogo de pesquisa: campo de texto para iniciar a busca. */
+  data object Search : HomeDialog
 }
 
 /** Alvo de restauração do foco ao (re)compor o Home. */
@@ -184,19 +187,35 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
   }
 
   fun openSearch() {
+    _dialog.value = HomeDialog.Search
+  }
+
+  /**
+   * Submete a pesquisa digitada no launcher. Usa `ACTION_SEARCH` com a query
+   * (destinado a abrir o buscador/Gemini da TV com a frase por teclado); se nenhum
+   * searchable estiver registado, cai para o assistente por voz.
+   */
+  fun submitSearch(query: String) {
+    if (query.isBlank()) return
+    try {
+      val searchIntent = Intent(Intent.ACTION_SEARCH).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        putExtra(SearchManager.QUERY, query)
+      }
+      appContext.startActivity(searchIntent)
+    } catch (_: Exception) {
+      openAssistant()
+    }
+  }
+
+  /** Abre o assistente do sistema (Gemini). */
+  private fun openAssistant() {
     try {
       val intent = Intent(Intent.ACTION_ASSIST).apply {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
       }
       appContext.startActivity(intent)
-    } catch (_: Exception) {
-      try {
-        val searchIntent = Intent(Intent.ACTION_SEARCH).apply {
-          addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        appContext.startActivity(searchIntent)
-      } catch (_: Exception) {}
-    }
+    } catch (_: Exception) {}
   }
 
   fun showSetAsHomeDialog() {

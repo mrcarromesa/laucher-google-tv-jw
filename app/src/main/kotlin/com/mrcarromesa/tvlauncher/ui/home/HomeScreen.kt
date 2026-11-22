@@ -21,10 +21,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -36,9 +41,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -94,6 +101,7 @@ private fun weatherIconForCode(code: Int, hour: Int): Int {
 
 private const val DOCK_SIZE = 5
 private const val JW_ENTRY_COUNT = 4
+private const val TOP_BAR_COUNT = 5
 
 /**
  * Home Screen fiel à referência visual references/model-v1.png.
@@ -108,6 +116,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
 
   val dockRequesters = remember { List(DOCK_SIZE) { FocusRequester() } }
   val jwRequesters = remember { List(JW_ENTRY_COUNT) { FocusRequester() } }
+  val topRequesters = remember { List(TOP_BAR_COUNT) { FocusRequester() } }
 
   fun requestInitialFocus() {
     when (val target = focusTarget) {
@@ -139,6 +148,8 @@ fun HomeScreen(viewModel: HomeViewModel) {
       TopBar(
         now = uiState.now,
         isOnline = uiState.isOnline,
+        topRequesters = topRequesters,
+        onDownToHeader = { jwRequesters[0].requestFocus() },
         onOpenAllApps = viewModel::openAllApps,
         onOpenSettings = viewModel::openSettings,
         onOpenSearch = viewModel::openSearch,
@@ -169,6 +180,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
           state = jw,
           dockFocusIndex = uiState.focusIndex,
           onJwFocus = viewModel::onJwFocused,
+          onUpToTopBar = { topRequesters[1].requestFocus() },
           jwRequesters = jwRequesters,
           dockRequesters = dockRequesters,
           onJwEntryClick = { entry ->
@@ -197,7 +209,15 @@ fun HomeScreen(viewModel: HomeViewModel) {
     }
   }
 
-  dialog?.let { DialogCard(it, onClose = viewModel::dismissDialog) }
+  dialog?.let {
+    when (it) {
+      HomeDialog.Search -> SearchDialog(
+        onSubmit = { query -> viewModel.submitSearch(query) },
+        onClose = viewModel::dismissDialog,
+      )
+      else -> DialogCard(it, onClose = viewModel::dismissDialog)
+    }
+  }
 
   BackHandler(enabled = dialog != null) { viewModel.dismissDialog() }
 }
@@ -208,6 +228,8 @@ fun HomeScreen(viewModel: HomeViewModel) {
 private fun TopBar(
   now: LocalDateTime,
   isOnline: Boolean,
+  topRequesters: List<FocusRequester>,
+  onDownToHeader: () -> Unit,
   onOpenAllApps: () -> Unit,
   onOpenSettings: () -> Unit,
   onOpenSearch: () -> Unit,
@@ -224,12 +246,25 @@ private fun TopBar(
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+      val homeInteraction = remember { MutableInteractionSource() }
+      val homeFocused by homeInteraction.collectIsFocusedAsState()
+
+      // Botão Início (lua/círculo)
       Box(
         modifier = Modifier
           .size(42.dp)
           .clip(CircleShape)
           .background(Color.White)
-          .clickable { onHomeClick() },
+          .focusRequester(topRequesters[0])
+          .focusable(interactionSource = homeInteraction)
+          .then(Modifier.tvFocusRing(homeFocused, shape = CircleShape))
+          .handleDPadKeyEvents(
+            onRight = { topRequesters[1].requestFocus() },
+            onDown = onDownToHeader,
+            onEnter = { onHomeClick() },
+            onLeft = {},
+            onUp = {},
+          ),
         contentAlignment = Alignment.Center,
       ) {
         Image(
@@ -252,11 +287,22 @@ private fun TopBar(
         verticalAlignment = Alignment.CenterVertically,
       ) {
         // Aba Início ativa
+        val inicioInteraction = remember { MutableInteractionSource() }
+        val inicioFocused by inicioInteraction.collectIsFocusedAsState()
         Box(
           modifier = Modifier
             .clip(RoundedCornerShape(18.dp))
             .background(Color.White.copy(alpha = 0.28f))
-            .clickable { onHomeClick() }
+            .focusRequester(topRequesters[1])
+            .focusable(interactionSource = inicioInteraction)
+            .then(Modifier.tvFocusRing(inicioFocused, shape = RoundedCornerShape(18.dp)))
+            .handleDPadKeyEvents(
+              onLeft = { topRequesters[0].requestFocus() },
+              onRight = { topRequesters[2].requestFocus() },
+              onDown = onDownToHeader,
+              onEnter = { onHomeClick() },
+              onUp = {},
+            )
             .padding(horizontal = 16.dp, vertical = 6.dp),
         ) {
           Text(
@@ -268,10 +314,21 @@ private fun TopBar(
         }
 
         // Aba Apps: Abre Todos os Apps
+        val appsInteraction = remember { MutableInteractionSource() }
+        val appsFocused by appsInteraction.collectIsFocusedAsState()
         Box(
           modifier = Modifier
             .clip(RoundedCornerShape(18.dp))
-            .clickable { onOpenAllApps() }
+            .focusRequester(topRequesters[2])
+            .focusable(interactionSource = appsInteraction)
+            .then(Modifier.tvFocusRing(appsFocused, shape = RoundedCornerShape(18.dp)))
+            .handleDPadKeyEvents(
+              onLeft = { topRequesters[1].requestFocus() },
+              onRight = { topRequesters[3].requestFocus() },
+              onDown = onDownToHeader,
+              onEnter = { onOpenAllApps() },
+              onUp = {},
+            )
             .padding(horizontal = 14.dp, vertical = 6.dp),
         ) {
           Text(
@@ -281,7 +338,7 @@ private fun TopBar(
           )
         }
 
-        // Aba Biblioteca
+        // Aba Biblioteca (decorativa — fora do âmbito da v1, não focável)
         Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
           Text(
             text = "Biblioteca",
@@ -298,10 +355,21 @@ private fun TopBar(
         )
 
         // Busca
+        val searchInteraction = remember { MutableInteractionSource() }
+        val searchFocused by searchInteraction.collectIsFocusedAsState()
         Box(
           modifier = Modifier
             .clip(CircleShape)
-            .clickable { onOpenSearch() }
+            .focusRequester(topRequesters[3])
+            .focusable(interactionSource = searchInteraction)
+            .then(Modifier.tvFocusRing(searchFocused, shape = CircleShape))
+            .handleDPadKeyEvents(
+              onLeft = { topRequesters[2].requestFocus() },
+              onRight = { topRequesters[4].requestFocus() },
+              onDown = onDownToHeader,
+              onEnter = { onOpenSearch() },
+              onUp = {},
+            )
             .padding(horizontal = 12.dp, vertical = 6.dp),
         ) {
           Image(
@@ -312,10 +380,21 @@ private fun TopBar(
         }
 
         // Definições
+        val settingsInteraction = remember { MutableInteractionSource() }
+        val settingsFocused by settingsInteraction.collectIsFocusedAsState()
         Box(
           modifier = Modifier
             .clip(CircleShape)
-            .clickable { onOpenSettings() }
+            .focusRequester(topRequesters[4])
+            .focusable(interactionSource = settingsInteraction)
+            .then(Modifier.tvFocusRing(settingsFocused, shape = CircleShape))
+            .handleDPadKeyEvents(
+              onLeft = { topRequesters[3].requestFocus() },
+              onDown = onDownToHeader,
+              onEnter = { onOpenSettings() },
+              onUp = {},
+              onRight = {},
+            )
             .padding(horizontal = 12.dp, vertical = 6.dp),
         ) {
           Image(
@@ -523,6 +602,7 @@ private fun JwPanel(
   state: JwState,
   dockFocusIndex: Int,
   onJwFocus: (Int) -> Unit,
+  onUpToTopBar: () -> Unit,
   jwRequesters: List<FocusRequester>,
   dockRequesters: List<FocusRequester>,
   onJwEntryClick: (JwEntryData) -> Unit,
@@ -558,6 +638,7 @@ private fun JwPanel(
           snapshot = state.snapshot,
           dockFocusIndex = dockFocusIndex,
           onJwFocus = onJwFocus,
+          onUpToTopBar = onUpToTopBar,
           jwRequesters = jwRequesters,
           dockRequesters = dockRequesters,
           onJwEntryClick = onJwEntryClick,
@@ -572,6 +653,7 @@ private fun JwContent(
   snapshot: JwSnapshot,
   dockFocusIndex: Int,
   onJwFocus: (Int) -> Unit,
+  onUpToTopBar: () -> Unit,
   jwRequesters: List<FocusRequester>,
   dockRequesters: List<FocusRequester>,
   onJwEntryClick: (JwEntryData) -> Unit,
@@ -591,6 +673,9 @@ private fun JwContent(
         .focusable(interactionSource = headerInteraction)
         .then(Modifier.tvFocusRing(headerFocused, shape = RoundedCornerShape(10.dp)))
         .handleDPadKeyEvents(
+          onUp = onUpToTopBar,
+          onLeft = {},
+          onRight = {},
           onDown = { jwRequesters[1].requestFocus() },
           onEnter = {
             snapshot.whatsNew?.pageUrl?.let { onJwEntryClick(JwEntryData.Text(it)) }
@@ -721,6 +806,7 @@ private fun DailyTextBanner(
       .then(Modifier.tvFocusRing(focused, shape = GlassShapeMedium))
       .handleDPadKeyEvents(
         onRight = onRight,
+        onLeft = {},
         onUp = onUp,
         onDown = onDown,
         onEnter = onClick,
@@ -814,6 +900,7 @@ private fun BroadcastingCard(
       .then(Modifier.tvFocusRing(focused, shape = GlassShapeSmall))
       .handleDPadKeyEvents(
         onLeft = onLeft,
+        onRight = {},
         onUp = onUp,
         onDown = onDown,
         onEnter = onClick,
@@ -906,6 +993,7 @@ private fun GoverningBodyCard(
       .then(Modifier.tvFocusRing(focused, shape = GlassShapeSmall))
       .handleDPadKeyEvents(
         onLeft = onLeft,
+        onRight = {},
         onUp = onUp,
         onDown = onDown,
         onEnter = onClick,
@@ -1265,10 +1353,12 @@ private fun DialogCard(dialog: HomeDialog, onClose: () -> Unit) {
         val title = when (dialog) {
           is HomeDialog.AppMissing -> stringResource(R.string.dialog_app_missing_title, dialog.appName)
           HomeDialog.SetAsHome -> stringResource(R.string.home_banner)
+          HomeDialog.Search -> ""
         }
         val body = when (dialog) {
           is HomeDialog.AppMissing -> stringResource(R.string.dialog_app_missing_body)
           HomeDialog.SetAsHome -> stringResource(R.string.home_banner_note)
+          HomeDialog.Search -> ""
         }
 
         Text(
@@ -1301,5 +1391,141 @@ private fun DialogCard(dialog: HomeDialog, onClose: () -> Unit) {
         }
       }
     }
+  }
+}
+
+// ---------------------------------------------------------------- Diálogo de Pesquisa
+
+@Composable
+private fun SearchDialog(
+  onSubmit: (String) -> Unit,
+  onClose: () -> Unit,
+) {
+  val fieldRequester = remember { FocusRequester() }
+  val okRequester = remember { FocusRequester() }
+  val cancelRequester = remember { FocusRequester() }
+  val keyboard = LocalSoftwareKeyboardController.current
+  var query by remember { mutableStateOf("") }
+
+  fun submitCurrent() {
+    val q = query.trim()
+    if (q.isNotEmpty()) onSubmit(q)
+    onClose()
+  }
+
+  LaunchedEffect(Unit) {
+    fieldRequester.requestFocus()
+    keyboard?.show()
+  }
+
+  Box(
+    modifier = Modifier
+      .fillMaxSize()
+      .background(Color.Black.copy(alpha = 0.55f)),
+    contentAlignment = Alignment.Center,
+  ) {
+    Column(
+      modifier = Modifier
+        .width(760.dp)
+        .glassPanel(shape = GlassShape, elevation = 16.dp)
+        .padding(horizontal = 32.dp, vertical = 28.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+      Text(
+        text = stringResource(R.string.search_title),
+        color = Ink,
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold,
+      )
+
+      val fieldInteraction = remember { MutableInteractionSource() }
+      val fieldFocused by fieldInteraction.collectIsFocusedAsState()
+      BasicTextField(
+        value = query,
+        onValueChange = { query = it },
+        singleLine = true,
+        textStyle = MaterialTheme.typography.titleMedium.copy(color = Ink),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { submitCurrent() }),
+        modifier = Modifier
+          .fillMaxWidth()
+          .focusRequester(fieldRequester)
+          .focusable(interactionSource = fieldInteraction)
+          .then(Modifier.tvFocusRing(fieldFocused, shape = RoundedCornerShape(12.dp)))
+          .background(Color.White.copy(alpha = 0.16f), RoundedCornerShape(12.dp))
+          .handleDPadKeyEvents(
+            onEnter = { submitCurrent() },
+            onDown = { okRequester.requestFocus() },
+          )
+          .padding(horizontal = 16.dp, vertical = 14.dp),
+        decorationBox = { inner ->
+          Box(Modifier.fillMaxWidth()) {
+            if (query.isEmpty()) {
+              Text(
+                text = stringResource(R.string.search_hint),
+                color = InkMuted,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.align(Alignment.CenterStart),
+              )
+            }
+            inner()
+          }
+        },
+      )
+
+      Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        SearchActionButton(
+          text = stringResource(R.string.search_action),
+          requester = okRequester,
+          onFocusUp = { fieldRequester.requestFocus() },
+          onFocusRight = { cancelRequester.requestFocus() },
+          onClick = { submitCurrent() },
+        )
+        SearchActionButton(
+          text = stringResource(R.string.search_cancel),
+          requester = cancelRequester,
+          onFocusUp = { fieldRequester.requestFocus() },
+          onFocusLeft = { okRequester.requestFocus() },
+          onClick = onClose,
+        )
+      }
+    }
+  }
+}
+
+@Composable
+private fun SearchActionButton(
+  text: String,
+  requester: FocusRequester,
+  onFocusUp: () -> Unit,
+  onFocusLeft: () -> Unit = {},
+  onFocusRight: () -> Unit = {},
+  onClick: () -> Unit,
+) {
+  val interaction = remember { MutableInteractionSource() }
+  val focused by interaction.collectIsFocusedAsState()
+
+  Box(
+    modifier = Modifier
+      .clip(RoundedCornerShape(12.dp))
+      .background(Color.White.copy(alpha = if (focused) 0.45f else 0.22f))
+      .focusRequester(requester)
+      .focusable(interactionSource = interaction)
+      .then(Modifier.tvFocusRing(focused, shape = RoundedCornerShape(12.dp)))
+      .handleDPadKeyEvents(
+        onUp = onFocusUp,
+        onLeft = onFocusLeft,
+        onRight = onFocusRight,
+        onDown = {},
+        onEnter = onClick,
+      )
+      .padding(horizontal = 30.dp, vertical = 12.dp),
+  ) {
+    Text(
+      text = text,
+      color = Color.White,
+      style = MaterialTheme.typography.titleMedium,
+      fontWeight = FontWeight.Bold,
+    )
   }
 }

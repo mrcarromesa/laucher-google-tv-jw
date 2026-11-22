@@ -22,6 +22,12 @@
     <string name="dialog_app_missing_title">«%1$s» não está disponível</string>
     <string name="dialog_app_missing_body">Esta app não está instalada nesta TV.</string>
 
+    <!-- Search -->
+    <string name="search_title">Pesquisar na TV</string>
+    <string name="search_hint">Escreva a sua pesquisa…</string>
+    <string name="search_action">Pesquisar</string>
+    <string name="search_cancel">Cancelar</string>
+
     <!-- All apps grid -->
     <string name="all_apps_empty">Sem apps</string>
 
