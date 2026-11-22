@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Controlador TV (contracts/jw-sources.md §6): play/pause, recuar/avançar 10 s
+     e velocidade. O PlayerControlView liga estes @id/exo_* do Media3. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <View
+      android:id="@id/exo_progress_placeholder"
+      android:layout_width="match_parent"
+      android:layout_height="@dimen/exo_styled_progress_layout_height"
+      android:layout_gravity="bottom"
+      android:layout_marginBottom="@dimen/exo_styled_progress_margin_bottom" />
+
+  <LinearLayout
+      android:id="@id/exo_center_controls"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_gravity="center"
+      android:background="@android:color/transparent"
+      android:gravity="center"
+      android:padding="@dimen/exo_styled_controls_padding"
+      android:clipToPadding="false"
+      android:layoutDirection="ltr">
+
+    <include layout="@layout/exo_player_control_rewind_button" />
+
+    <ImageButton
+        android:id="@id/exo_play_pause"
+        style="@style/ExoStyledControls.Button.Center.PlayPause" />
+
+    <include layout="@layout/exo_player_control_ffwd_button" />
+
+    <ImageButton
+        android:id="@id/exo_playback_speed"
+        style="@style/ExoStyledControls.Button.Center.PlayPause"
+        android:src="@drawable/exo_styled_controls_speed"
+        android:contentDescription="@string/exo_controls_playback_speed" />
+
+  </LinearLayout>
+
+</merge>

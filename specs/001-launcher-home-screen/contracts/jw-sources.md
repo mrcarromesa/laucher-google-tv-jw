@@ -102,8 +102,8 @@ Nunca usar `video/3gpp`, HLS ou `progressiveDownloadURL` de outro domínio que n
 
 | Tipo | Ação |
 |---|---|
-| Texto (novidades, texto do dia) | ecrã de leitura: `WebView` com o `pageUrl`, JavaScript ativo só para injetar CSS de leitura; navegação limitada a `jw.org`/`wol.jw.org`; sem `addJavascriptInterface` |
-| Vídeo (Broadcasting, Boletim) | ecrã de reprodução: Media3 `ExoPlayer` com `videoUrl`, controlador visível, OK = play/pause, Voltar = sair e libertar |
+| Texto (novidades, texto do dia) | ecrã de leitura: `WebView` com o `pageUrl` e um cursor virtual sobreposto (`TvCursorWebView`): D-pad move o cursor, OK clica o elemento nesse ponto (converte px de ecrã→CSS), nas bordas verticais o cursor rola a página. Sem alterar o HTML nem depender das classes do site; JS só para dispensar o aviso de cookies (re-injetado em cada página). Navegação limitada a `jw.org`/`wol.jw.org`; sem `addJavascriptInterface` |
+| Vídeo (Broadcasting, Boletim) | ecrã de reprodução: Media3 `ExoPlayer` com `videoUrl`, foco pedido ao `PlayerView` (devolvido quando o controlador se auto-oculta); controlador com play/pause, recuar/avançar 10 s e velocidade (0,25×–1,5×); OK = play/pause, Voltar = sair e libertar |
 
 ## 7. Falha, cache e atualização
 
