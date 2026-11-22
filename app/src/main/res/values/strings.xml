@@ -21,8 +21,6 @@
     <string name="dialog_ok">OK</string>
     <string name="dialog_app_missing_title">«%1$s» não está disponível</string>
     <string name="dialog_app_missing_body">Esta app não está instalada nesta TV.</string>
-    <string name="dialog_hdmi_title">Mudança de entrada HDMI</string>
-    <string name="dialog_hdmi_body">A TV não permite mudar de entrada a partir de uma app. No comando da TV, carregue no botão de entrada/origem e escolha HDMI %1$d.</string>
 
     <!-- All apps grid -->
     <string name="all_apps_empty">Sem apps</string>

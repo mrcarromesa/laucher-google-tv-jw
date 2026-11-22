@@ -85,7 +85,7 @@ O utilizador vê no ecrã inicial as novidades do site, o texto do dia, o últim
 
 - **Primeira utilização sem rede**: o dock e as apps funcionam; clima e JW.org mostram estados de indisponibilidade sem mensagens de erro técnicas e sem bloquear a navegação.
 - **App em falta**: Netflix, YouTube ou qualquer app da grelha pode não estar instalada; o item mantém-se visível e identificado como indisponível, e o launcher não falha.
-- **HDMI não suportado pelo fabricante**: os itens HDMI 1 e HDMI 2 mantêm-se no dock; ao selecionar, o utilizador recebe uma explicação de que a TV não permite a troca automática de entrada e a indicação de como o fazer no comando da TV.
+- **Entrada HDMI sem sinal**: os itens HDMI 1 e HDMI 2 mantêm-se no dock; ao selecionar, o launcher tenta a troca via passthrough; se a entrada não estiver disponível, não altera o estado do ecrã (sem diálogo).
 - **Localização negada ou indisponível**: o clima apresenta-se como indisponível; o cabeçalho omite a temperatura em vez de mostrar um valor errado.
 - **Fonte do jw.org alterada**: a estrutura da fonte pode mudar sem aviso; a atualização falha em silêncio, o conteúdo anterior mantém-se e a data de atualização expõe a idade do conteúdo.
 - **Regresso de uma app**: ao voltar de uma app aberta a partir do dock, o foco está no item que a lançou.
@@ -104,7 +104,7 @@ O utilizador vê no ecrã inicial as novidades do site, o texto do dia, o últim
 - **FR-002**: O dock MUST ser horizontal e conter, por esta ordem, Netflix, YouTube, HDMI 1, HDMI 2 e "Todos os Apps".
 - **FR-003**: O utilizador MUST poder abrir a app nativa correspondente a cada item do dock, exceto os itens HDMI.
 - **FR-004**: Um item do dock cuja app não está instalada MUST apresentar-se como indisponível e MUST NOT impedir a navegação nem lançar outra app.
-- **FR-005**: Os itens HDMI MUST tentar mudar a entrada da TV para a entrada correspondente; quando a TV não o permite, MUST apresentar uma explicação e o procedimento manual no comando da TV.
+- **FR-005**: Os itens HDMI MUST tentar mudar a entrada da TV para a entrada correspondente; quando a troca não for possível, MUST NOT alterar o estado do ecrã (sem diálogo; o foco mantém-se no item).
 - **FR-006**: O item "Todos os Apps" MUST abrir uma grelha com todas as apps abríveis instaladas no dispositivo, incluindo as do dock, sem incluir o próprio launcher.
 - **FR-007**: A grelha de apps MUST permitir abrir qualquer app apresentada e MUST regressar ao ecrã inicial com Voltar, repondo o foco no item que a abriu.
 - **FR-008**: O launcher MUST detetar que não é o HOME predefinido e MUST mostrar instruções para o definir; MUST NOT alterar essa definição por si.
@@ -174,7 +174,7 @@ O utilizador vê no ecrã inicial as novidades do site, o texto do dia, o últim
 ## Assumptions
 
 - **HOME manual**: o utilizador define o launcher como HOME nos ajustes da TV; o launcher apenas explica como o fazer.
-- **HDMI depende do fabricante**: a troca de entrada pode não ser possível. Os itens mantêm-se, com degradação explicada ao utilizador em vez de funcionalidade silenciosamente em falta.
+- **HDMI depende do fabricante**: a troca usa o passthrough TvInput; depende de o fabricante expor entradas HDMI no TvInputManager. Se a entrada não estiver disponível, não há efeito visível (sem diálogo).
 - **jw.org sem API oficial**: o conteúdo é obtido da fonte pública do site; a estrutura pode mudar e a atualização pode falhar sem aviso, pelo que o conteúdo guardado é a garantia de continuidade.
 - **Rede intermitente**: assume-se que a TV pode estar sem rede durante períodos longos; tudo o que é essencial funciona offline e o que depende de rede degrada com indicação de idade do conteúdo.
 - **Um único utilizador, uma única TV**: sem perfis, sem sincronização entre dispositivos, sem contas.

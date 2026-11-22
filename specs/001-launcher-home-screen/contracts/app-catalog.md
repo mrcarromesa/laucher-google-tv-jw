@@ -51,8 +51,8 @@ Resultado: `List<InstalledApp>`. Lista vazia é um estado válido (grelha mostra
 |---|---|---|---|
 | 0 | Netflix | `com.netflix.ninja` | lançar; se ausente → mensagem |
 | 1 | YouTube | `com.google.android.youtube.tv` | lançar; se ausente → mensagem |
-| 2 | HDMI 1 | — | diálogo de ajuda |
-| 3 | HDMI 2 | — | diálogo de ajuda |
+| 2 | HDMI 1 | — | troca via passthrough TvInput (sem diálogo) |
+| 3 | HDMI 2 | — | troca via passthrough TvInput (sem diálogo) |
 | 4 | Todos os Apps | — | abrir grelha |
 
 - O item existe sempre; o estado `installed` vem do catálogo.
@@ -90,10 +90,18 @@ roleManager.isRoleHeld(RoleManager.ROLE_HOME)
 
 ## 6. HDMI
 
-- OK em `HDMI n` abre um diálogo: "A TV não permite mudar de entrada a partir de uma
-  app. No comando da TV, carregue no botão de entrada/origem e escolha HDMI n."
-- Sem `TvInputManager`, sem intents de fabricante, sem `Settings`.
-- Fechar com OK ou Voltar devolve o foco ao item HDMI.
+- OK em `HDMI n` tenta a troca automática para a entrada correspondente via
+  passthrough do TvInput framework:
+  1. resolver o `TvInputInfo` HDMI com `TvInputManager.tvInputList` (filtrar
+     `TYPE_HDMI` / id contendo `hdmi`), combinando por label/índice;
+  2. `TvContract.buildChannelUriForPassthroughInput(inputId)` + `ACTION_VIEW`;
+  3. fallback ao identificador verificado do fabricante
+     (`com.mediatek.tvinput/.hdmi.HDMIInputService/HW4|HW5`).
+- **Sem diálogo**: se a troca não for possível (ex.: entrada sem sinal), não faz nada —
+  o foco fica no item. Sem `Settings`, sem escrever definições.
+- Verificado na TV (2026-11-22): o `<queries>` para `content://android.media.tv` e
+  `com.mediatek.tvinput` é **obrigatório** (visibilidade de pacotes Android 11+);
+  sem ele o intent não resolve e a troca falha silenciosamente.
 
 ## 7. Manifesto (resumo)
 
@@ -103,6 +111,22 @@ roleManager.isRoleHeld(RoleManager.ROLE_HOME)
 
 <uses-feature android:name="android.software.leanback" android:required="true" />
 <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
+<queries>
+  <intent>
+    <action android:name="android.intent.action.MAIN" />
+    <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+  </intent>
+  <intent>
+    <action android:name="android.intent.action.MAIN" />
+    <category android:name="android.intent.category.LAUNCHER" />
+  </intent>
+  <intent>
+    <action android:name="android.intent.action.VIEW" />
+    <data android:scheme="content" android:host="android.media.tv" />
+  </intent>
+  <package android:name="com.mediatek.tvinput" />
+</queries>
 
 <activity android:name=".MainActivity" android:exported="true">
   <intent-filter>

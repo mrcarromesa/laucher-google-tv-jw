@@ -66,7 +66,7 @@ Voltar não faz nada (é o HOME).
 |---|---|
 | App do dock ausente | OK abre diálogo "«Netflix» não está instalada."; foco não muda |
 | App da grelha indisponível no momento do OK | diálogo idêntico; a grelha mantém-se |
-| HDMI 1/2 | diálogo com o procedimento manual no comando da TV |
+| HDMI 1/2 | tenta trocar para a entrada correspondente via passthrough TvInput; se a troca não for possível, sem efeito (foco fica no item) — sem diálogo |
 | Sem rede | sem diálogo; os painéis mostram idade/indisponibilidade |
 | Não é HOME | banner no topo, não focável e não bloqueante; mantém-se enquanto o papel não for nosso |
 | Refresh em curso | sem indicador bloqueante; o conteúdo antigo continua visível |

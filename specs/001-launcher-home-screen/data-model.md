@@ -26,7 +26,7 @@ em JSON e as de UI são reconstruídas a partir delas.
   estar instalada (FR-002, FR-004).
 - `installed == false` ⇒ o item é apresentado esbatido e OK mostra a mensagem de
   indisponibilidade; nunca lança outra app.
-- `Hdmi` nunca está "indisponível": OK abre sempre o diálogo de ajuda (FR-005).
+- `Hdmi` nunca está "indisponível": OK tenta a troca automática via passthrough (FR-005); se a troca não for possível, sem efeito — nunca um diálogo de indisponibilidade.
 
 ### `InstalledApp`
 

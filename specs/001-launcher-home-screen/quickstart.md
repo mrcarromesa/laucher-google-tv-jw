@@ -92,11 +92,7 @@ adb -s <serial> shell am start -n com.mrcarromesa.tvlauncher/.MainActivity
 adb -s <serial> shell am force-stop com.mrcarromesa.tvlauncher
 ```
 
-Testes JVM (parsers):
-
-```powershell
-.\gradlew.bat :app:testDebugUnitTest
-```
+Verificação na TV (sem testes JVM na v1 — verificação manual, Princípio V).
 
 ## 4. Definir como HOME (manual, na TV)
 
@@ -124,7 +120,7 @@ concluída depois disto (Princípio V).
 | 6 | OK numa app da grelha | app abre; Voltar volta ao ecrã inicial |
 | 7 | Voltar da grelha | foco em "Todos os Apps" |
 | 8 | Desinstalar Netflix (noutro dispositivo de teste, se aplicável) | item esbatido; OK mostra mensagem; nada fecha |
-| 9 | OK em HDMI 1 | diálogo com o procedimento manual no comando |
+| 9 | OK em HDMI 1 | troca para a entrada HDMI correspondente; se a entrada estiver sem sinal, nada muda (foco fica no item) |
 | 10 | Launcher não é HOME | banner com instruções; nada é alterado |
 
 ### US2 — Cabeçalho (P2)
@@ -182,7 +178,7 @@ adb -s <serial> shell dumpsys window | findstr mCurrentFocus
 
 - **Sem rede**: normal; os painéis mostram cache/indisponibilidade.
 - **JW.org vazio**: verificar `logcat` para `ParseFailure`; a estrutura do site pode
-  ter mudado — atualizar o parser e a fixture.
+  ter mudado — o launcher mantém o cache anterior silenciosamente.
 - **Clima errado**: o IP pode estar a sair por VPN; `place.json` guarda a localização
   usada (apagar o ficheiro força nova deteção).
 - **Foco preso**: confirmar que o item está dentro da área segura e que a lista faz

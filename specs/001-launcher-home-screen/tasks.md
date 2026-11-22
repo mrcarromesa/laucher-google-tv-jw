@@ -9,7 +9,10 @@ description: "Task list for the Google TV launcher home screen feature"
 
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, quickstart.md, contracts/ (app-catalog.md, ui-behavior.md, weather-sources.md, jw-sources.md), `.specify/memory/constitution.md`
 
-**Tests**: Incluídos para US3 e US4 porque o plan.md e os contratos `weather-sources.md`/`jw-sources.md` pedem explicitamente testes JUnit 4 + `kotlinx-coroutines-test` para os parsers e a seleção de conteúdo, com fixtures capturadas das respostas reais. US1 e US2 não têm testes unitários na v1 (verificação manual na TV, Princípio V).
+**Tests**: Removidos por decisão de produto (2026-11-22) — sem testes JVM na v1. Toda a
+verificação é manual na TV (Princípio V). As tasks T035–T047 (fixtures e testes JUnit)
+foram removidas; a robustez dos parsers usa degradação silenciosa + cache (R3).
+US1 e US2 já eram só verificação manual na TV.
 
 **Organization**: Tasks grouped by user story for independent implementation and testing.
 
@@ -21,8 +24,7 @@ description: "Task list for the Google TV launcher home screen feature"
 
 ## Path Conventions
 
-- Single Android module: `app/src/main/kotlin/com/mrcarromesa/tvlauncher/` (abreviado `src/…`), `app/src/test/…`, `app/src/main/res/…`
-- Tests JVM: `app/src/test/kotlin/com/mrcarromesa/tvlauncher/…` e fixtures em `app/src/test/resources/fixtures/`
+- Single Android module: `app/src/main/kotlin/com/mrcarromesa/tvlauncher/` (abreviado `src/…`), `app/src/main/res/…`
 - Verificação na TV: sempre segundo `quickstart.md` e `AGENTS.md` (na TV só instalar/iniciar/parar/remover `com.mrcarromesa.tvlauncher`)
 
 ---
@@ -69,18 +71,18 @@ description: "Task list for the Google TV launcher home screen feature"
 
 ## Phase 3: User Story 1 — Abrir uma app a partir do dock (Priority: P1) — MVP
 
-**Goal**: dock horizontal com Netflix, YouTube, HDMI 1, HDMI 2 e "Todos os Apps"; abrir a app nativa com OK; grelha de apps; deteção de HOME com banner de instruções; diálogos de app em falta e HDMI.
+**Goal**: dock horizontal com Netflix, YouTube, HDMI 1, HDMI 2 e "Todos os Apps"; abrir a app nativa com OK; grelha de apps; deteção de HOME com banner de instruções; diálogo de app em falta e troca HDMI.
 
 **Independent Test**: "instalar a app na TV, defini-la como HOME, navegar no dock só com o D-pad e abrir cada um dos cinco itens" (spec.md US1; passos em quickstart.md §US1).
 
 ### Implementation for User Story 1
 
-- [X] T021 [P] [US1] Criar `app/src/main/kotlin/com/mrcarromesa/tvlauncher/model/Dock.kt`: selado `DockItem` com `App(packageName, installed, icon)` / `Hdmi(index: 1|2)` / `AllApps`, ordem fixa 0…4 (Netflix, YouTube, HDMI 1, HDMI 2, Todos os Apps); invariantes de data-model.md — "A ordem e o número de itens são constantes; um item nunca desaparece por a app não estar instalada" e "Hdmi nunca está 'indisponível': OK abre sempre o diálogo de ajuda"
+- [X] T021 [P] [US1] Criar `app/src/main/kotlin/com/mrcarromesa/tvlauncher/model/Dock.kt`: selado `DockItem` com `App(packageName, installed, icon)` / `Hdmi(index: 1|2)` / `AllApps`, ordem fixa 0…4 (Netflix, YouTube, HDMI 1, HDMI 2, Todos os Apps); invariantes de data-model.md — "A ordem e o número de itens são constantes; um item nunca desaparece por a app não estar instalada" e "Hdmi nunca está 'indisponível': OK tenta a troca automática"
 - [X] T022 [P] [US1] Implementar `app/src/main/kotlin/com/mrcarromesa/tvlauncher/data/AppCatalog.kt`: enumeração com `queryIntentActivities` para `MAIN`+`CATEGORY_LEANBACK_LAUNCHER` e `MAIN`+`CATEGORY_LAUNCHER`, união por `packageName`, excluir `com.mrcarromesa.tvlauncher`; `label = loadLabel`, `icon = loadIcon` (exceção → ícone genérico); manter só quem tem `getLeanbackLaunchIntentForPackage(pkg) ?: getLaunchIntentForPackage(pkg) != null`; ordenar por `label` com `Collator` de `pt` sem distinguir maiúsculas; lista vazia é estado válido (contracts/app-catalog.md §2)
 - [X] T023 [P] [US1] Implementar `app/src/main/kotlin/com/mrcarromesa/tvlauncher/data/HomeRole.kt`: `RoleManager.isRoleHeld(RoleManager.ROLE_HOME)`; sem nenhuma escrita em `RoleManager`, `Settings` ou pacotes (contracts/app-catalog.md §5)
 - [X] T024 [US1] Em `ui/home/HomeViewModel.kt`: construir os 5 `DockItem` a partir de `AppCatalog`; índice de foco inicial 0, persistido e restaurado ao voltar de uma app; guarda `launching` — "duas pressões rápidas em OK não lançam duas instâncias: a ação é ignorada enquanto a anterior não regressa ao estado Resumed" (contracts/app-catalog.md §4)
 - [X] T025 [US1] Em `ui/home/HomeScreen.kt`: composable do dock — linha horizontal com itens 168×120 dp, espaçamento 20 dp, altura 132 dp (contracts/ui-behavior.md §7); navegação ←/→ uma posição por pressão, sem saltar nos extremos; anel de foco via `Glass`; `contentDescription` com nome + estado ("Netflix, indisponível") (contracts/ui-behavior.md §9)
-- [X] T026 [US1] Em `ui/home/HomeScreen.kt`: ações de OK do dock — app instalada → `startActivity(intent.addFlags(FLAG_ACTIVITY_NEW_TASK))`; `ActivityNotFoundException`/intent nulo → diálogo "«nome» não está disponível" e foco fica onde está; HDMI 1/2 → diálogo "A TV não permite mudar de entrada a partir de uma app. No comando da TV, carregue no botão de entrada/origem e escolha HDMI n."; "Todos os Apps" → abrir grelha; criar um único composable de diálogo (título, corpo, "OK") reutilizado em todos os casos, OK/Voltar fecham e repõem o foco (contracts/ui-behavior.md §3, app-catalog.md §6)
+- [X] T026 [US1] Em `ui/home/HomeScreen.kt`: ações de OK do dock — app instalada → `startActivity(intent.addFlags(FLAG_ACTIVITY_NEW_TASK))`; `ActivityNotFoundException`/intent nulo → diálogo "«nome» não está disponível" e foco fica onde está; HDMI 1/2 → troca automática via passthrough TvInput (sem diálogo; se falhar, foco fica onde está); "Todos os Apps" → abrir grelha; criar um único composable de diálogo (título, corpo, "OK") reutilizado para a app em falta, OK/Voltar fecham e repõem o foco (contracts/ui-behavior.md §3, app-catalog.md §6)
 - [X] T027 [US1] Criar `app/src/main/kotlin/com/mrcarromesa/tvlauncher/ui/apps/AllAppsScreen.kt`: `LazyVerticalGrid` de 5 colunas, espaçamento 16 dp, ícones 96 dp (contracts/ui-behavior.md §7); nomes longos com `maxLines = 2` + `TextOverflow.Ellipsis` sem sobrepor o ícone; scroll para manter o item focado visível; estado "Sem apps" quando a lista é vazia
 - [X] T028 [US1] Em `ui/home/HomeViewModel.kt` e `ui/LauncherRoot.kt`: navegação Home ↔ AllApps — OK numa app da grelha lança; Voltar regressa ao Home com foco em "Todos os Apps" (índice 4); ao voltar de uma app lançada da grelha, foco na app lançada (contracts/ui-behavior.md §2, FR-007)
 - [X] T029 [US1] Em `ui/home/HomeScreen.kt`: banner de HOME quando `isHome == false` — texto "Para usar este ecrã como Início: Definições → Apps → Apps predefinidas → Início → Escolher «TV Launcher»." + nota "O launcher não altera esta definição."; não focável, não bloqueante, mantém-se enquanto o papel não for nosso (contracts/app-catalog.md §5); re-verificar o papel ao voltar ao ecrã
@@ -115,10 +117,9 @@ description: "Task list for the Google TV launcher home screen feature"
 
 ### Tests for User Story 3
 
-> **NOTE: escrever os testes PRIMEIRO e garantir que FALHAM antes da implementação** (WeatherSources.kt ainda não existe).
+> **Removidos (2026-11-22)**: sem testes JVM na v1 — verificação manual na TV. As tasks
+> T035 (fixtures) e T036 (WeatherSourcesTest.kt) foram removidas.
 
-- [X] T035 [P] [US3] Capturar respostas reais e guardar em `app/src/test/resources/fixtures/ipwhois.json` e `app/src/test/resources/fixtures/open-meteo.json` (estrutura em contracts/weather-sources.md §1–2)
-- [X] T036 [P] [US3] Criar `app/src/test/kotlin/com/mrcarromesa/tvlauncher/data/weather/WeatherSourcesTest.kt` (JUnit 4 + kotlinx-coroutines-test): sucesso com `success:true`/coordenadas/cidade; falha com `success != true` ou coordenadas ausentes; parsing de `current`/`daily`/`hourly`; "Pontos com localTime >= agora (no fuso do dispositivo), ordenados, primeiros 5"; `ParseFailure` quando "hourly tem de ter os três arrays com o mesmo comprimento", "Menos de 5 pontos futuros", ou campo obrigatório ausente (contracts/weather-sources.md §2); `weather_code` desconhecido → condição "—" (não é falha)
 - [X] T037 [US3] Criar `app/src/main/kotlin/com/mrcarromesa/tvlauncher/model/Weather.kt`: `Place`, `WeatherSnapshot(currentTempC, currentCode, maxC, minC, hourly, fetchedAt)`, `HourlyPoint(localTime, tempC, code)`; invariantes de data-model.md — "hourly é sempre filtrada para localTime >= agora e ordenada; mostram-se 5" e "maxC >= minC"; `WeatherCondition(code, labelPt, icon)`
 - [X] T038 [US3] Criar `app/src/main/kotlin/com/mrcarromesa/tvlauncher/data/weather/WeatherCode.kt`: tabela WMO fixa (0–3, 45/48, 51–57, 61–67, 71–77, 80–82, 85/86, 95–99) → `WeatherCondition`; "código desconhecido → '—'" (data-model.md)
 - [X] T039 [US3] Implementar `app/src/main/kotlin/com/mrcarromesa/tvlauncher/data/weather/WeatherSources.kt`: `GET https://ipwho.is/` (UA fixo, timeout 5 s; sucesso ⇒ gravar `place.json` e só voltar a pedir se faltar ou tiver > 30 dias; falha ⇒ usar `place.json` se existir) e `GET https://api.open-meteo.com/v1/forecast` com `current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=2` (timeout 8 s); regras de parsing exatamente como em contracts/weather-sources.md §2 (R4)
@@ -140,11 +141,8 @@ description: "Task list for the Google TV launcher home screen feature"
 
 ### Tests for User Story 4
 
-> **NOTE: escrever os testes PRIMEIRO e garantir que FALHAM antes da implementação** (JwSources.kt ainda não existe).
-
-- [X] T045 [P] [US4] Capturar respostas reais e guardar em `app/src/test/resources/fixtures/whats-new.html`, `wol-daily.html`, `mediator-latest-videos.json`, `mediator-news.json` (contracts/jw-sources.md §8)
-- [X] T046 [US4] Criar testes em `app/src/test/kotlin/com/mrcarromesa/tvlauncher/data/jw/JwSourcesTest.kt` para os parsers HTML: novidades — primeiro bloco `div.synopsis`+`docId`, `p.meta.pubDate`, `h3 > a[href]`, href relativo resolvido contra `https://www.jw.org`, `ParseFailure` se nenhum bloco válido; texto do dia — bloco `div.tabContent[data-date]` de hoje, senão o do meio (índice 1), `ParseFailure` se qualquer dos três textos vazio (contracts/jw-sources.md §1–2)
-- [X] T047 [US4] Criar testes em `app/src/test/kotlin/com/mrcarromesa/tvlauncher/data/jw/JwSourcesTest.kt` para os parsers JSON: LatestVideos — primeiro item `primaryCategory == "StudioMonthlyPrograms"` ordenado por `firstPublished` desc; StudioNewsReports — título casa `^Boletim do Corpo Governante`, primeiro por `firstPublished` desc, `ParseFailure` se nenhum casar; escolha do vídeo — filtrar `mimetype == "video/mp4"`, maior altura entre `240p`…`1080p`, nunca `video/3gpp` nem URL fora de `*.jw-cdn.org` (contracts/jw-sources.md §3–5)
+> **Removidos (2026-11-22)**: sem testes JVM na v1 — verificação manual na TV. As tasks
+> T045 (fixtures), T046 e T047 (JwSourcesTest.kt) foram removidas.
 
 ### Implementation for User Story 4
 
@@ -169,7 +167,7 @@ description: "Task list for the Google TV launcher home screen feature"
 - [ ] T057 Executar a validação completa de quickstart.md "Critérios de sucesso": SC-001…SC-010 confirmados na TV (incluindo SC-003 com `adb shell dumpsys gfxinfo`, SC-004, SC-005 em 1080p e 4K, SC-009 leitura a 3 m, SC-010 sem alterações de definições)
 - [X] T058 [P] Desempenho: confirmar destaque de foco < 200 ms (`animateFloatAsState(tween(120))`), primeiro frame com cache < 500 ms e ecrã completo < 2 s após acordar/voltar, e que o desfoque do fundo é aplicado uma vez e nunca por frame (contracts/ui-behavior.md §8, R1, SC-003/SC-004)
 - [X] T059 [P] Limpeza: remover código morto do template (imports/dependências Navigation3 remanescentes, recursos não usados); confirmar um único `MainActivity`, sem permissões ou dependências não usadas (Princípio IV, plan.md "Structure Decision")
-- [X] T060 [P] Passagem de segurança: confirmar que nenhum caminho de código escreve definições da TV, de outros pacotes ou do HOME (SC-010, FR-026), que não há intents de fabricante para HDMI, e que o WebView não tem `addJavascriptInterface` e aplica a allowlist `jw.org`/`wol.jw.org` (Princípio I, R2)
+- [X] T060 [P] Passagem de segurança: confirmar que nenhum caminho de código escreve definições da TV, de outros pacotes ou do HOME (SC-010, FR-026), que a troca HDMI usa apenas o passthrough TvInput (com fallback específico do MediaTek resolvido de forma read-only via TvInputManager), e que o WebView não tem `addJavascriptInterface` e aplica a allowlist `jw.org`/`wol.jw.org` (Princípio I, R2 corrigido)
 - [ ] T061 Casos-limite de spec.md "Edge Cases": primeira utilização sem rede, app em falta, HDMI não suportado, localização negada, fonte jw.org alterada (falha silenciosa + cache), regresso de app com foco restaurado, navegação rápida sem lançamentos duplicados, nomes longos na grelha, 4K com overscan, mudança de fuso/hora de verão
 
 **Checkpoint**: feature completa e validada na TV contra todos os critérios de sucesso.
@@ -195,16 +193,14 @@ description: "Task list for the Google TV launcher home screen feature"
 
 ### Within Each User Story
 
-- Testes (US3/US4) escritos e a FALHAR antes da implementação
 - Modelos antes de serviços; serviços antes de UI; integração antes de verificação na TV
-- Verificação na TV (quickstart.md) antes de dar a história por concluída (Princípio V)
+- Verificação na TV (quickstart.md) antes de dar a história por concluída (Princípio V; sem testes JVM na v1)
 
 ### Parallel Opportunities
 
 - **Setup**: T004, T005, T008, T009 em paralelo (ficheiros diferentes)
 - **Foundational**: T011–T015 em paralelo (Http, JsonCache, Theme, Glass, fundo — ficheiros diferentes)
 - **US1**: T021, T022, T023 em paralelo (Dock, AppCatalog, HomeRole)
-- **US3**: T035 e T036 em paralelo (fixtures e testes)
 - **Histórias**: US1–US4 podem ser trabalhadas em paralelo por pessoas diferentes após a Foundational
 
 ---
@@ -218,12 +214,12 @@ Task: "Implementar data/AppCatalog.kt" # T022
 Task: "Implementar data/HomeRole.kt"   # T023
 ```
 
-## Parallel Example: User Story 3 (tests)
+## Parallel Example: User Story 3 (model)
 
 ```bash
-# Launch fixtures and tests for User Story 3 together:
-Task: "Capturar fixtures ipwhois.json + open-meteo.json"  # T035
-Task: "Criar WeatherSourcesTest.kt"                        # T036
+# As histórias seguem por prioridade e são verificadas na TV; sem testes JVM na v1.
+Task: "Criar model/Weather.kt"                       # T037
+Task: "Criar data/weather/WeatherCode.kt"            # T038
 ```
 
 ---
@@ -243,9 +239,9 @@ Task: "Criar WeatherSourcesTest.kt"                        # T036
 1. Setup + Foundational → fundação pronta (shell "Liquid Glass" navegável)
 2. US1 → testar na TV → Deploy/Demo (MVP)
 3. US2 → cabeçalho → testar na TV → Deploy/Demo
-4. US3 → clima (com testes JUnit dos parsers) → testar na TV → Deploy/Demo
-5. US4 → jw.org (leitura + reprodução, com testes JUnit) → testar na TV → Deploy/Demo
-6. Cada história acrescenta valor sem partir as anteriores; verificação na TV a cada passo (Princípio V)
+4. US3 → clima → testar na TV → Deploy/Demo
+5. US4 → jw.org (leitura + reprodução) → testar na TV → Deploy/Demo
+6. Cada história acrescenta valor sem partir as anteriores; verificação na TV a cada passo (Princípio V; sem testes JVM na v1)
 
 ### Parallel Team Strategy
 
@@ -262,9 +258,9 @@ Com várias pessoas:
 
 - **Ambiente**: sessões com `java` 8 no PATH precisam de `$env:JAVA_HOME='C:\Program Files\Microsoft\jdk-17.0.21.102-hotspot'; $env:PATH="$env:JAVA_HOME\bin;$env:PATH"` antes de compilar (quickstart.md §1)
 - **Na TV**: apenas instalar/iniciar/parar/remover `com.mrcarromesa.tvlauncher` (`AGENTS.md`). Nunca definir o HOME por ADB.
-- **HDMI**: R2 — a troca automática de entrada não é implementável sem permissão de assinatura; implementa-se só o diálogo de ajuda (FR-005, segunda metade)
+- **HDMI**: R2 corrigido (2026-11-22) — a troca automática implementa-se via passthrough TvInput + `<queries>`, sem `BIND_TV_INPUT`; sem diálogo (FR-005 primeira metade satisfeita)
 - **Toolchain**: fixada (R6); subir qualquer peça exige rever a constituição
 - **Ficheiros de cache**: `filesDir/weather.json`, `filesDir/jw.json`, `filesDir/place.json` (data-model.md "Armazenamento")
-- **Testes**: `.\gradlew.bat :app:testDebugUnitTest` (quickstart.md §3); fixtures detetam mudanças de estrutura das fontes (R3)
+- **Testes**: removidos na v1 (2026-11-22) — sem testes JVM; verificação manual na TV (Princípio V)
 - **[P]** = ficheiros diferentes, sem dependências; **[Story]** = mapeia a tarefa à história para rastreabilidade
 - Commitar após cada tarefa ou grupo lógico; parar em qualquer checkpoint para validar a história

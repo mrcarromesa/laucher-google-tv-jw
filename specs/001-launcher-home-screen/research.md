@@ -35,31 +35,44 @@ ramo condicional (Princípio II).
 ## R2 — Troca de entrada HDMI
 
 **Decision**: os itens "HDMI 1" e "HDMI 2" ficam sempre no dock. Ao carregar em OK,
-abre-se um diálogo que explica que a TV não permite a troca automática de entrada e
-indica o botão de entrada/origem do comando da TV. O launcher não tenta escrever
-definições, nem lançar intents de fabricante.
+o launcher **tenta a troca automática** para a entrada HDMI correspondente via o
+passthrough do framework TvInput, resolvendo o identificador dinamicamente com
+`TvInputManager`. Sem diálogo: se a troca não for possível, não faz nada (foco fica no
+item). O launcher não escreve definições nem usa `adb`/`settings`.
 
-**Rationale**: mudar a entrada atual exige sintonizar um `TvInputService`, e para
-ligar a um serviço de TV o cliente tem de deter `android.permission.BIND_TV_INPUT`,
-permissão de assinatura (só apps de sistema). `TvInputManager` serve para listar e
-observar entradas, não para as sintonizar; `TvView.tune()` está limitado a clientes de
-input. Não existe API pública que permita a uma app normal mudar a entrada atual ou
-abrir o seletor de entradas do sistema.
+> **Correção (2026-11-22, verificado na TV):** a versão original deste R2 concluía que
+> a troca automática era impossível por app normal e que o OK devia abrir um diálogo
+> de ajuda. **Refutado** ao instalar e testar no dispositivo real: a troca funciona
+> com `TvContract.buildChannelUriForPassthroughInput(inputId)` + `ACTION_VIEW`, **desde
+> que o manifesto declare a visibilidade de pacotes** (`<queries>` para
+> `content://android.media.tv` e `com.mediatek.tvinput`). Sem esse `<queries>`, o
+> intent não resolve (Android 11+ esconde o controlador) e o passthrough falha de
+> forma silenciosa — foi o que se observou nos primeiros testes.
 
-Isto significa que a primeira metade de FR-005 ("tentar mudar a entrada") não é
-satisfazível por uma app instalável sem privilégios. A segunda metade (explicação e
-procedimento manual) é o comportamento obrigatório e é o que se implementa. A
-premissa "HDMI depende do fabricante" da spec cobre este caso.
+**Rationale**: a troca via passthrough TvInput não exige `BIND_TV_INPUT` (permissão de
+assinatura): requer apenas que a app veja o input (visibilidade de pacotes via
+`<queries>`) para que o `ACTION_VIEW` com o channel URI de passthrough seja entregue ao
+`TvInputManager`. As IDs HDMI (`com.mediatek.tvinput/.hdmi.HDMIInputService/HW4|HW5` —
+HDMI 1 = HW4, HDMI 2 = HW5) foram confirmadas com `dumpsys tv_input` no aparelho. O
+fallback é específico do fabricante MediaTek, mas a resolução primária (`TvInputManager`)
+é genérica — em outra TV, o fallback não é alcançado se o tvInputList tiver os HDMI.
+A premissa "HDMI depende do fabricante" da spec mantém-se: depende de o fabricante
+expor entradas HDMI no TvInputManager, mas a via de troca é do framework, não um
+intent de fabricante.
 
 **Alternatives rejected**:
-- `TvInputManager` + `TvView`: falha com `SecurityException` sem permissão de
-  assinatura; não instalável no alvo.
-- Intents de fabricante (`com.google.android.tv…`, `com.sony…`): específicos de
-  fabricante, proibidos pelo Princípio II e não verificáveis no dispositivo.
+- Diálogo de ajuda como comportamento único (versão antiga): substituído — a troca
+  real é possível e preferível (FR-005 primeira metade satisfeita).
 - `settings put` / `cmd` / ADB: proibidos por `AGENTS.md` e pelo Princípio I.
+- `TvView.tune()`: ainda limitado a clientes de input com `BIND_TV_INPUT`; não usado —
 
-**Consequences**: nenhum código morto de "tentativa". O item HDMI é um caminho de UI
-para o diálogo de ajuda. Registado em [plan.md](plan.md#notas-e-riscos).
+  a via é o passthrough content-URI, que resolve sem essa permissão.
+
+**Consequences**: a primeira metade de FR-005 ("tentar mudar a entrada") fica
+satisfeita e **implementa-se**; a segunda metade (explicação/procedimento manual) deixa
+de ser necessária como diálogo obrigatório, pois o fallback é simplesmente "não faz
+nada". O `<queries>` no manifesto é código necessário, não opcional. Sem sinal na
+entrada HDMI, o passthrough pode não ter efeito visível — comportamento aceite.
 
 ---
 
@@ -108,8 +121,8 @@ boletim: os boletins são os primeiros itens da categoria.
 **Deteção de mudança de estrutura**: cada parser valida os campos mínimos. Se faltar
 qualquer um, o resultado é `ParseFailure`: não se escreve cache, não se atualiza
 `lastSuccess`, o conteúdo anterior mantém-se e a data de atualização exposta fica
-mais antiga. Um teste JVM por fonte, com fixture capturada, falha assim que a
-estrutura mudar — é o aviso antecipado.
+mais antiga. Na v1 sem testes JVM (verificado na TV, Princípio V); o sintoma visível
+na TV é o painel JW ficar com a data anterior.
 
 **Consequences**: o painel depende de HTML de terceiros; a degradação é silenciosa e
 o cache é a garantia de continuidade (FR-019, FR-020, edge case "fonte alterada").
@@ -260,9 +273,10 @@ atómica de blobs grandes).
 
 ## Riscos assumidos
 
-1. **FR-005, primeira metade** — não implementável sem permissão de assinatura (R2).
+1. **FR-005, primeira metade** — tratada: a troca HDMI implementa-se via passthrough
+    TvInput + `<queries>` (R2 corrigido, 2026-11-22).
 2. **jw.org** — HTML de terceiros pode mudar sem aviso; mitigado por validação de
-   campos, cache e teste com fixture (R3).
+   campos e cache (R3); sem testes JVM na v1.
 3. **`ipwho.is`** — nível gratuito tem limites; mitigado por guardar a localização e
    só a renovar após 30 dias (R4).
 4. **Toolchain antiga** — fixada pelo `compileSdk 34`; qualquer subida é uma emenda à

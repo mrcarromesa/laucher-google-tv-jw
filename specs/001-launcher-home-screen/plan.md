@@ -32,9 +32,9 @@ JSON 1.7.3; OkHttp 4.12.0. Sem Navigation, sem Room, sem DataStore, sem Play Ser
 `filesDir/jw.json`), envelope `{schema, fetchedAt, payload}`, escrita atómica.
 Sem base de dados.
 
-**Testing**: JUnit 4 + `kotlinx-coroutines-test` para os parsers e a seleção de
-conteúdo (fixtures capturadas das respostas reais). Verificação funcional manual na TV
-(Princípio V); não há testes instrumentados na v1.
+**Testing**: verificação funcional manual na TV (Princípio V); sem testes unitários na
+v1 (removidos por decisão de produto 2026-11-22 — a validação é na TV real, não por
+fixtures).
 
 **Target Platform**: Google TV / Android 14 (API 34). `compileSdk 34`, `targetSdk 34`,
 `minSdk 31`. Sem ramos por versão, fabricante ou idioma.
@@ -70,7 +70,7 @@ interface em português, 24 h, °C.
 
 | Princípio | Verificação | Estado |
 |---|---|---|
-| **I** | `contracts/app-catalog.md` e `contracts/ui-behavior.md` não contêm qualquer escrita de definições. O único caminho de HDMI é um diálogo informativo. | PASS |
+| **I** | `contracts/app-catalog.md` e `contracts/ui-behavior.md` não contêm qualquer escrita de definições. O caminho de HDMI é a troca via passthrough TvInput (sem diálogo); nada escreve no sistema. | PASS |
 | **II** | `data-model.md` não tem campos de versão/fabricante/idioma; os endpoints fixam `pt`/`T`. Toolchain fixada (R6) para manter `compileSdk 34`. | PASS |
 | **III** | `contracts/ui-behavior.md` define ordem de foco, tratamento de OK/Voltar e reposição de foco para os quatro ecrãs. | PASS |
 | **IV** | O design não acrescenta ecrãs além dos quatro da spec; o cache é ficheiro, não base de dados; a lista de apps usa `<queries>` em vez de `QUERY_ALL_PACKAGES`. | PASS |
@@ -139,11 +139,6 @@ app/
     │   └── res/
     │       ├── drawable/                  # fundo estático, ícones
     │       └── values/                    # strings PT, tema
-    └── test/
-        ├── kotlin/com/mrcarromesa/tvlauncher/data/
-        │   ├── jw/JwSourcesTest.kt
-        │   └── weather/WeatherSourcesTest.kt
-        └── resources/fixtures/            # respostas reais capturadas
 ```
 
 **Structure Decision**: um módulo Android único (`app`), porque o produto é uma app
@@ -156,12 +151,13 @@ removidas — três ecrãs resolvem-se com um estado no `HomeViewModel`.
 
 ## Notas e Riscos
 
-- **FR-005 (HDMI)**: a troca automática de entrada exige `BIND_TV_INPUT` (permissão de
-  assinatura). Implementa-se o fallback obrigatório — diálogo com o procedimento no
-  comando da TV — e não se escreve código de uma tentativa que não pode funcionar.
+- **FR-005 (HDMI)**: a troca automática implementa-se via passthrough TvInput
+  (`TvContract.buildChannelUriForPassthroughInput` + `ACTION_VIEW`), com `<queries>` no
+  manifesto para visibilidade de pacotes. Verificado na TV (2026-11-22): resolve sem
+  `BIND_TV_INPUT`. Sem sinal na entrada, o passthrough pode não ter efeito — sem diálogo.
   Ver [research.md](research.md#r2--troca-de-entrada-hdmi).
 - **jw.org**: HTML de terceiros; cada parser valida campos mínimos e, em falha, mantém
-  o cache e a data anterior. Testes com fixtures detetam mudanças de estrutura.
+  o cache e a data anterior. Sem testes JVM na v1 — a robustez é verificada na TV.
 - **Cache > 24 h**: o painel passa a "sem dados recentes" (SC-008) em vez de mostrar
   valores antigos como atuais; a data da última atualização continua visível.
 - **Toolchain**: fixada em AGP 8.7.3 / Gradle 8.9 / Compose BOM 2024.06.00 para

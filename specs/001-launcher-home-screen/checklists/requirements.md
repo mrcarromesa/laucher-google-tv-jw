@@ -34,5 +34,6 @@
 - Validation pass 1 (2026-11-22): all items pass; no clarifications required.
 - Deliberate exclusions confirmed against the source image: search, library and settings are visible in `references/model-v1.png` but excluded in "Out of Scope (v1)".
 - The three premises from the brief are recorded as assumptions: manual HOME, HDMI dependent on manufacturer, no official jw.org API, plus offline operation.
+- Correction (2026-11-22): "HDMI dependent on manufacturer" was an assumption; on the actual TV the passthrough via `TvContract.buildChannelUriForPassthroughInput` + `<queries>` works from a normal app (see research.md R2). The premise stays as "depends on the manufacturer exposing HDMI TvInputs" but no longer implies "not viable".
 - "Desfoque de fundo" and screen resolutions are stated as user-visible outcomes, not as technique choices; the rendering technique is left to `/speckit.plan`.
 - SC-009 (legibility at 3 m) is verified on the real TV, consistent with the project constitution's Principle V.

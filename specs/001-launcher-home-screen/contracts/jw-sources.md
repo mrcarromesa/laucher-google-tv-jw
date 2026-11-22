@@ -118,7 +118,5 @@ Nunca usar `video/3gpp`, HLS ou `progressiveDownloadURL` de outro domínio que n
 
 ## 8. Fixtures de teste
 
-Guardar em `app/src/test/resources/fixtures/` uma resposta real de cada fonte
-(`whats-new.html`, `wol-daily.html`, `mediator-latest-videos.json`,
-`mediator-news.json`) e testar: seleção correta, campos extraídos, e falha quando um
-campo obrigatório é removido.
+> Removido por decisão de produto (2026-11-22): sem testes JVM na v1. A robustez dos
+> parsers valida-se na TV real (Princípio V); a degradação silenciosa + cache mantém-se.

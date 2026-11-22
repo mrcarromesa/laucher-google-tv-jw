@@ -65,10 +65,6 @@ dependencies {
   // Tooling
   debugImplementation(libs.androidx.compose.ui.tooling)
 
-  // Local tests: jUnit (v1 has no instrumented tests)
-  testImplementation(libs.junit)
-  testImplementation(libs.kotlinx.coroutines.test)
-
   // TV Material
   implementation(libs.androidx.tv.material)
   // Media3 (video playback)
