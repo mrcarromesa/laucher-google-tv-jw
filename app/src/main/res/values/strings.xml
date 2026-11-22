@@ -1,0 +1,42 @@
+<resources>
+    <string name="app_name">TV Launcher</string>
+
+    <!-- Dock -->
+    <string name="dock_netflix">Netflix</string>
+    <string name="dock_youtube">YouTube</string>
+    <string name="dock_hdmi_1">HDMI 1</string>
+    <string name="dock_hdmi_2">HDMI 2</string>
+    <string name="dock_all_apps">Todos os Apps</string>
+    <string name="dock_unavailable">indisponível</string>
+
+    <!-- Header -->
+    <string name="header_wifi">Wi-Fi</string>
+    <string name="header_no_connection">Sem ligação</string>
+
+    <!-- Home banner (not HOME) -->
+    <string name="home_banner">Para usar este ecrã como Início: Definições → Apps → Apps predefinidas → Início → Escolher «TV Launcher».</string>
+    <string name="home_banner_note">O launcher não altera esta definição.</string>
+
+    <!-- Dialog -->
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_app_missing_title">«%1$s» não está disponível</string>
+    <string name="dialog_app_missing_body">Esta app não está instalada nesta TV.</string>
+    <string name="dialog_hdmi_title">Mudança de entrada HDMI</string>
+    <string name="dialog_hdmi_body">A TV não permite mudar de entrada a partir de uma app. No comando da TV, carregue no botão de entrada/origem e escolha HDMI %1$d.</string>
+
+    <!-- All apps grid -->
+    <string name="all_apps_empty">Sem apps</string>
+
+    <!-- Weather panel -->
+    <string name="weather_updated">Atualizado há %1$s</string>
+    <string name="weather_no_recent">Sem dados recentes</string>
+    <string name="weather_data_source">Dados: Open-Meteo (CC BY 4.0)</string>
+    <string name="content_unavailable">Conteúdo indisponível</string>
+
+    <!-- JW.org panel -->
+    <string name="jw_whats_new">Novidades</string>
+    <string name="jw_daily_text">Texto do dia</string>
+    <string name="jw_broadcasting">JW Broadcasting</string>
+    <string name="jw_governing_body">Boletim do Corpo Governante</string>
+    <string name="jw_updated">Atualizado há %1$s</string>
+</resources>

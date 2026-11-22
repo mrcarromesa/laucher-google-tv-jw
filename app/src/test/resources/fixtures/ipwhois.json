@@ -1,0 +1,38 @@
+{
+    "ip": "2804:ef4:52fe:2900:4cba:7dd0:848:408",
+    "success": true,
+    "type": "IPv6",
+    "continent": "South America",
+    "continent_code": "SA",
+    "country": "Brazil",
+    "country_code": "BR",
+    "region": "Santa Catarina",
+    "region_code": "SC",
+    "city": "Ararangua",
+    "latitude": -28.9357532,
+    "longitude": -49.4953806,
+    "is_eu": false,
+    "postal": "88901-258",
+    "calling_code": "55",
+    "capital": "Brasília",
+    "borders": "AR,BO,CO,GF,GY,PE,PY,SR,UY,VE",
+    "flag": {
+        "img": "https://cdn.ipwhois.io/flags/br.svg",
+        "emoji": "🇧🇷",
+        "emoji_unicode": "U+1F1E7 U+1F1F7"
+    },
+    "connection": {
+        "asn": 28642,
+        "org": "Contato Internet EIRELI",
+        "isp": "Contato Internet Ltda",
+        "domain": "contato.net"
+    },
+    "timezone": {
+        "id": "America/Sao_Paulo",
+        "abbr": "-03",
+        "is_dst": false,
+        "offset": -10800,
+        "utc": "-03:00"
+    },
+    "readme": "https://ipwhois.io/docs"
+}
