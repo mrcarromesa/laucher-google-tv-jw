@@ -102,7 +102,7 @@ private fun weatherIconForCode(code: Int, hour: Int): Int {
 
 private const val DOCK_SIZE = 5
 private const val JW_ENTRY_COUNT = 4
-private const val TOP_BAR_COUNT = 5
+private const val TOP_BAR_COUNT = 8
 
 /**
  * Home Screen fiel à referência visual references/model-v1.png.
@@ -152,6 +152,11 @@ fun HomeScreen(viewModel: HomeViewModel) {
         topRequesters = topRequesters,
         onDownToHeader = { jwRequesters[0].requestFocus() },
         onOpenAllApps = viewModel::openAllApps,
+        onOpenChildren = {
+          viewModel.openExternalBrowser(JwSources.CHILDREN_URL, JwSources.JW_BROWSER_PACKAGE)
+        },
+        onOpenWorkbook = viewModel::openWorkbook,
+        onOpenWatchtower = viewModel::openWatchtowerStudy,
         onOpenSettings = viewModel::openSettings,
         onOpenSearch = viewModel::openSearch,
         onHomeClick = {
@@ -187,6 +192,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
           onJwEntryClick = { entry ->
             when (entry) {
               is JwEntryData.Text -> viewModel.openReader(entry.pageUrl)
+              is JwEntryData.Browser -> viewModel.openExternalBrowser(entry.url, entry.packageName)
               is JwEntryData.Video -> viewModel.openPlayer(entry.videoUrl, entry.title, entry.posterUrl)
             }
           },
@@ -232,6 +238,9 @@ private fun TopBar(
   topRequesters: List<FocusRequester>,
   onDownToHeader: () -> Unit,
   onOpenAllApps: () -> Unit,
+  onOpenChildren: () -> Unit,
+  onOpenWorkbook: () -> Unit,
+  onOpenWatchtower: () -> Unit,
   onOpenSettings: () -> Unit,
   onOpenSearch: () -> Unit,
   onHomeClick: () -> Unit,
@@ -245,7 +254,7 @@ private fun TopBar(
     // Lado esquerdo: Botão Início + Cápsula de Navegação
     Row(
       verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(14.dp),
+      horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
       val homeInteraction = remember { MutableInteractionSource() }
       val homeFocused by homeInteraction.collectIsFocusedAsState()
@@ -253,7 +262,7 @@ private fun TopBar(
       // Botão Início (lua/círculo)
       Box(
         modifier = Modifier
-          .size(42.dp)
+          .size(38.dp)
           .clip(CircleShape)
           .background(Color.White)
           .focusRequester(topRequesters[0])
@@ -271,20 +280,20 @@ private fun TopBar(
         Image(
           painter = painterResource(R.drawable.ic_home),
           contentDescription = "Início",
-          modifier = Modifier.size(20.dp),
+          modifier = Modifier.size(18.dp),
         )
       }
 
       Row(
         modifier = Modifier
-          .height(42.dp)
+          .height(38.dp)
           .glassPanel(
-            shape = RoundedCornerShape(21.dp),
+            shape = RoundedCornerShape(19.dp),
             elevation = 6.dp,
             bgAlphaTop = 0.25f,
             bgAlphaBottom = 0.12f,
           )
-          .padding(horizontal = 6.dp),
+          .padding(horizontal = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
         // Aba Início ativa
@@ -292,11 +301,11 @@ private fun TopBar(
         val inicioFocused by inicioInteraction.collectIsFocusedAsState()
         Box(
           modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(Color.White.copy(alpha = 0.28f))
             .focusRequester(topRequesters[1])
             .focusable(interactionSource = inicioInteraction)
-            .then(Modifier.tvFocusRing(inicioFocused, shape = RoundedCornerShape(18.dp)))
+            .then(Modifier.tvFocusRing(inicioFocused, shape = RoundedCornerShape(16.dp)))
             .handleDPadKeyEvents(
               onLeft = { topRequesters[0].requestFocus() },
               onRight = { topRequesters[2].requestFocus() },
@@ -304,7 +313,7 @@ private fun TopBar(
               onEnter = { onHomeClick() },
               onUp = {},
             )
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .padding(horizontal = 14.dp, vertical = 4.dp),
         ) {
           Text(
             text = "Início",
@@ -319,10 +328,10 @@ private fun TopBar(
         val appsFocused by appsInteraction.collectIsFocusedAsState()
         Box(
           modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
             .focusRequester(topRequesters[2])
             .focusable(interactionSource = appsInteraction)
-            .then(Modifier.tvFocusRing(appsFocused, shape = RoundedCornerShape(18.dp)))
+            .then(Modifier.tvFocusRing(appsFocused, shape = RoundedCornerShape(16.dp)))
             .handleDPadKeyEvents(
               onLeft = { topRequesters[1].requestFocus() },
               onRight = { topRequesters[3].requestFocus() },
@@ -330,7 +339,7 @@ private fun TopBar(
               onEnter = { onOpenAllApps() },
               onUp = {},
             )
-            .padding(horizontal = 14.dp, vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 4.dp),
         ) {
           Text(
             text = "Apps",
@@ -339,10 +348,26 @@ private fun TopBar(
           )
         }
 
-        // Aba Biblioteca (decorativa — fora do âmbito da v1, não focável)
-        Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+        // Aba Crianças: abre a secção de vídeos infantis no navegador da TV
+        val childrenInteraction = remember { MutableInteractionSource() }
+        val childrenFocused by childrenInteraction.collectIsFocusedAsState()
+        Box(
+          modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .focusRequester(topRequesters[3])
+            .focusable(interactionSource = childrenInteraction)
+            .then(Modifier.tvFocusRing(childrenFocused, shape = RoundedCornerShape(16.dp)))
+            .handleDPadKeyEvents(
+              onLeft = { topRequesters[2].requestFocus() },
+              onRight = { topRequesters[4].requestFocus() },
+              onDown = onDownToHeader,
+              onEnter = { onOpenChildren() },
+              onUp = {},
+            )
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        ) {
           Text(
-            text = "Biblioteca",
+            text = "Crianças",
             color = Color.White.copy(alpha = 0.85f),
             style = MaterialTheme.typography.titleMedium,
           )
@@ -351,9 +376,59 @@ private fun TopBar(
         Box(
           modifier = Modifier
             .width(1.dp)
-            .height(18.dp)
+            .height(16.dp)
             .background(Color.White.copy(alpha = 0.35f)),
         )
+
+        // Aba Apostila: abre a apostila da reunião da semana atual no navegador da TV
+        val apostilaInteraction = remember { MutableInteractionSource() }
+        val apostilaFocused by apostilaInteraction.collectIsFocusedAsState()
+        Box(
+          modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .focusRequester(topRequesters[4])
+            .focusable(interactionSource = apostilaInteraction)
+            .then(Modifier.tvFocusRing(apostilaFocused, shape = RoundedCornerShape(16.dp)))
+            .handleDPadKeyEvents(
+              onLeft = { topRequesters[3].requestFocus() },
+              onRight = { topRequesters[5].requestFocus() },
+              onDown = onDownToHeader,
+              onEnter = { onOpenWorkbook() },
+              onUp = {},
+            )
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        ) {
+          Text(
+            text = "Apostila",
+            color = Color.White.copy(alpha = 0.85f),
+            style = MaterialTheme.typography.titleMedium,
+          )
+        }
+
+        // Aba A Sentinela: abre o estudo da semana atual no navegador da TV
+        val sentinelaInteraction = remember { MutableInteractionSource() }
+        val sentinelaFocused by sentinelaInteraction.collectIsFocusedAsState()
+        Box(
+          modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .focusRequester(topRequesters[5])
+            .focusable(interactionSource = sentinelaInteraction)
+            .then(Modifier.tvFocusRing(sentinelaFocused, shape = RoundedCornerShape(16.dp)))
+            .handleDPadKeyEvents(
+              onLeft = { topRequesters[4].requestFocus() },
+              onRight = { topRequesters[6].requestFocus() },
+              onDown = onDownToHeader,
+              onEnter = { onOpenWatchtower() },
+              onUp = {},
+            )
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        ) {
+          Text(
+            text = "A Sentinela",
+            color = Color.White.copy(alpha = 0.85f),
+            style = MaterialTheme.typography.titleMedium,
+          )
+        }
 
         // Busca
         val searchInteraction = remember { MutableInteractionSource() }
@@ -361,22 +436,22 @@ private fun TopBar(
         Box(
           modifier = Modifier
             .clip(CircleShape)
-            .focusRequester(topRequesters[3])
+            .focusRequester(topRequesters[6])
             .focusable(interactionSource = searchInteraction)
             .then(Modifier.tvFocusRing(searchFocused, shape = CircleShape))
             .handleDPadKeyEvents(
-              onLeft = { topRequesters[2].requestFocus() },
-              onRight = { topRequesters[4].requestFocus() },
+              onLeft = { topRequesters[5].requestFocus() },
+              onRight = { topRequesters[7].requestFocus() },
               onDown = onDownToHeader,
               onEnter = { onOpenSearch() },
               onUp = {},
             )
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 10.dp, vertical = 4.dp),
         ) {
           Image(
             painter = painterResource(R.drawable.ic_search),
             contentDescription = "Pesquisar",
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(16.dp),
           )
         }
 
@@ -386,22 +461,22 @@ private fun TopBar(
         Box(
           modifier = Modifier
             .clip(CircleShape)
-            .focusRequester(topRequesters[4])
+            .focusRequester(topRequesters[7])
             .focusable(interactionSource = settingsInteraction)
             .then(Modifier.tvFocusRing(settingsFocused, shape = CircleShape))
             .handleDPadKeyEvents(
-              onLeft = { topRequesters[3].requestFocus() },
+              onLeft = { topRequesters[6].requestFocus() },
               onDown = onDownToHeader,
               onEnter = { onOpenSettings() },
               onUp = {},
               onRight = {},
             )
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 10.dp, vertical = 4.dp),
         ) {
           Image(
             painter = painterResource(R.drawable.ic_settings),
             contentDescription = "Definições",
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(16.dp),
           )
         }
       }
@@ -595,6 +670,8 @@ private fun HourlyColumn(h: HourlyPoint) {
 
 private sealed interface JwEntryData {
   data class Text(val pageUrl: String) : JwEntryData
+  /** Abre num navegador instalado em vez do leitor interno (WebView). */
+  data class Browser(val url: String, val packageName: String) : JwEntryData
   data class Video(val title: String, val videoUrl: String, val posterUrl: String?) : JwEntryData
 }
 
@@ -679,7 +756,7 @@ private fun JwContent(
           onRight = {},
           onDown = { jwRequesters[1].requestFocus() },
           onEnter = {
-            onJwEntryClick(JwEntryData.Text(JwSources.JW_HOME_URL))
+            onJwEntryClick(JwEntryData.Browser(JwSources.JW_HOME_URL, JwSources.JW_BROWSER_PACKAGE))
           },
         )
         .onFocusChanged { if (it.isFocused) onJwFocus(0) }

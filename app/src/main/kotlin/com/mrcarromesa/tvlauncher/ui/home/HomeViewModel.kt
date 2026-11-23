@@ -16,6 +16,7 @@ import com.mrcarromesa.tvlauncher.data.ConnectivityMonitor
 import com.mrcarromesa.tvlauncher.data.HomeRole
 import com.mrcarromesa.tvlauncher.data.Http
 import com.mrcarromesa.tvlauncher.data.JsonCache
+import com.mrcarromesa.tvlauncher.data.jw.JwMeetingLinks
 import com.mrcarromesa.tvlauncher.data.jw.JwRepository
 import com.mrcarromesa.tvlauncher.data.jw.JwSources
 import com.mrcarromesa.tvlauncher.data.weather.WeatherRepository
@@ -25,6 +26,7 @@ import com.mrcarromesa.tvlauncher.model.InstalledApp
 import com.mrcarromesa.tvlauncher.ui.Screen
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -80,9 +82,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
       sources = WeatherSources(http, filesDir),
       cache = JsonCache(filesDir),
     )
+  private val jwSources = JwSources(http)
   private val jwRepository =
     JwRepository(
-      sources = JwSources(http),
+      sources = jwSources,
       cache = JsonCache(filesDir),
     )
 
@@ -201,6 +204,28 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
   fun openSearch() {
     _dialog.value = HomeDialog.Search
+  }
+
+  /** Abre a apostila da reunião da semana atual no navegador da TV. */
+  fun openWorkbook() {
+    viewModelScope.launch {
+      val date = LocalDate.now()
+      val url = jwSources.fetchWorkbookWeekUrl(date) ?: JwMeetingLinks.workbookUrl(date)
+      openExternalBrowser(url, JwSources.JW_BROWSER_PACKAGE)
+    }
+  }
+
+  /**
+   * Abre o artigo do estudo de A Sentinela da semana atual. Procura no jw.org a
+   * edição correspondente e o artigo cuja semana contém hoje; sem essa informação,
+   * cai para a página da edição.
+   */
+  fun openWatchtowerStudy() {
+    viewModelScope.launch {
+      val date = LocalDate.now()
+      val url = jwSources.fetchWatchtowerStudyArticle(date) ?: JwMeetingLinks.studyEditionUrl(date)
+      openExternalBrowser(url, JwSources.JW_BROWSER_PACKAGE)
+    }
   }
 
   /**
@@ -324,6 +349,22 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
   fun openReader(pageUrl: String) {
     _screen.value = Screen.Reader(pageUrl)
+  }
+
+  /**
+   * Abre `url` numa app externa instalada (navegador da TV). Sem essa app,
+   * cai no leitor interno para o botão nunca ficar sem resposta.
+   */
+  fun openExternalBrowser(url: String, packageName: String) {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+      setPackage(packageName)
+      addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    try {
+      appContext.startActivity(intent)
+    } catch (_: Exception) {
+      openReader(url)
+    }
   }
 
   fun openPlayer(videoUrl: String, title: String, posterUrl: String?) {

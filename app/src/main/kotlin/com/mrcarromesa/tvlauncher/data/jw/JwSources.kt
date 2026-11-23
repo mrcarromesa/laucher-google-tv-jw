@@ -40,6 +40,21 @@ class JwSources(private val http: Http) {
   suspend fun fetchGoverningBody(): ParseResult<JwVideoEntry> =
     parseFrom(getText(STUDIO_NEWS_URL, "application/json")) { parseStudioNews(it) }
 
+  /**
+   * URL do artigo de estudo de A Sentinela para a semana que contém [date].
+   * `null` se a edição não tiver o artigo (ou sem rede).
+   */
+  suspend fun fetchWatchtowerStudyArticle(date: LocalDate): String? {
+    val body = getText(JwMeetingLinks.studyEditionUrl(date)) ?: return null
+    return JwMeetingLinks.pickStudyArticle(body, date)
+  }
+
+  /** URL da semana da apostila que contém [date]. `null` sem rede/parse. */
+  suspend fun fetchWorkbookWeekUrl(date: LocalDate): String? {
+    val body = getText(JwMeetingLinks.workbookUrl(date)) ?: return null
+    return JwMeetingLinks.pickWorkbookWeek(body, date)
+  }
+
   // --- parser HTML: texto do dia (contracts/jw-sources.md §2) ---
 
   fun parseDailyText(body: String): ParseResult<JwDailyText> {
@@ -161,6 +176,11 @@ class JwSources(private val http: Http) {
 
   companion object {
     const val JW_HOME_URL = "https://www.jw.org/"
+    const val JW_BASE_URL = "https://www.jw.org/pt"
+    /** Navegador instalado na TV usado para abrir o jw.org fora do WebView. */
+    const val JW_BROWSER_PACKAGE = "com.internet.tvbrowser"
+    /** Secção de vídeos para crianças no jw.org. */
+    const val CHILDREN_URL = "https://www.jw.org/pt/biblioteca/videos/#pt/categories/VODChildren"
     const val WOL_DAILY_URL = "https://wol.jw.org/pt/wol/h/r5/lp-t"
     const val LATEST_VIDEOS_URL =
       "https://b.jw-cdn.org/apis/mediator/v1/categories/T/LatestVideos?detailed=1&clientType=www"

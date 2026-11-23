@@ -1,6 +1,8 @@
 package com.mrcarromesa.tvlauncher.ui.reader
 
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.net.Uri
 import android.view.ViewGroup
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -21,15 +23,14 @@ import java.net.URI
  * nesse ponto, e nas bordas verticais o cursor rola a página. Sem alterar o HTML nem
  * depender das classes do site. Navegação limitada a `jw.org`/`wol.jw.org`;
  * sem `addJavascriptInterface`; JS só para dispensar o aviso de cookies. Voltar fecha.
- * O vídeo do site em "ecrã inteiro" é entregue ao player nativo via [onOpenVideo]
- * (os controlos em ecrã inteiro do site não respondem ao cursor virtual).
+ * Fullscreen de vídeo: clique no botão fullscreen do player abre no browser TV externo
+ * (ex.: `com.internet.tvbrowser`) via intent — mais confiável no Android TV.
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun ReaderScreen(
   pageUrl: String,
   onClose: () -> Unit,
-  onOpenVideo: (String) -> Unit = {},
 ) {
   BackHandler { onClose() }
 
@@ -45,9 +46,22 @@ fun ReaderScreen(
           settings.domStorageEnabled = true
           isFocusable = true
           isFocusableInTouchMode = true
-          onVideoFullscreen = onOpenVideo
+          onVideoFullscreen = { videoUrl ->
+            // Abre o vídeo no browser TV externo (ex.: com.internet.tvbrowser)
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(videoUrl))
+              .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+              .setPackage("com.internet.tvbrowser") // Browser TV específico
+            try {
+              context.startActivity(intent)
+            } catch (e: Exception) {
+              // Fallback: tenta abrir com qualquer app que suporte VIEW
+              intent.setPackage(null)
+              context.startActivity(intent)
+            }
+          }
         }
         webHolder[0] = web
+        web.setFullscreenContainer(this)
         web.webViewClient =
           object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
@@ -67,6 +81,8 @@ fun ReaderScreen(
             override fun onPageFinished(view: WebView, url: String) {
               // Dispensa o aviso de cookies (conteúdo bloqueado até aceitar); re-aplica em cada página.
               view.evaluateJavascript(DISMISS_CONSENT_JS, null)
+              // Garante foco no WebView após cada carregamento.
+              view.post { (view as? TvCursorWebView)?.ensureWebViewFocus() }
             }
           }
         web.loadUrl(pageUrl)
@@ -101,8 +117,7 @@ fun ReaderScreen(
         }
       }
     },
-    // Ao sair do ecrã (fechar ou ir para o player nativo), destrói o WebView para parar
-    // o vídeo/áudio e não deixar estado preso.
+    // Ao sair do ecrã, destrói o WebView para parar o vídeo/áudio e não deixar estado preso.
     onRelease = { webHolder[0]?.destroy() },
   )
 }
