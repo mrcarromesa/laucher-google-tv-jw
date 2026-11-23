@@ -43,7 +43,11 @@ fun LauncherRoot(viewModel: HomeViewModel = viewModel()) {
       onLaunch = { viewModel.launchPackage(it, fromAllApps = true) },
       onBack = { viewModel.goHome() },
     )
-    is Screen.Reader -> ReaderScreen(pageUrl = current.pageUrl, onClose = { viewModel.goHome() })
+    is Screen.Reader -> ReaderScreen(
+      pageUrl = current.pageUrl,
+      onClose = { viewModel.goHome() },
+      onOpenVideo = { url -> viewModel.openPlayer(url, "", null) },
+    )
     is Screen.Player -> PlayerScreen(
       videoUrl = current.videoUrl,
       title = current.title,

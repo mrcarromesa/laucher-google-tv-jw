@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Botão "voltar" do leitor (ui/reader): círculo escuro semi-transparente com seta,
+     visível sobre qualquer fundo. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <path
+        android:fillColor="#CC000000"
+        android:pathData="M32,32 m-28,0 a28,28 0 1,1 56,0 a28,28 0 1,1 -56,0" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M38,16 L18,32 L38,48 L33,32 Z" />
+</vector>
