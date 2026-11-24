@@ -180,7 +180,7 @@ class JwSources(private val http: Http) {
     /** Navegador instalado na TV usado para abrir o jw.org fora do WebView. */
     const val JW_BROWSER_PACKAGE = "com.internet.tvbrowser"
     /** Secção de vídeos para crianças no jw.org. */
-    const val CHILDREN_URL = "https://www.jw.org/pt/biblioteca/videos/#pt/categories/VODChildren"
+    const val CHILDREN_URL = "https://www.jw.org/pt/biblioteca/videos/#pt/categories/BJF"
     const val WOL_DAILY_URL = "https://wol.jw.org/pt/wol/h/r5/lp-t"
     const val LATEST_VIDEOS_URL =
       "https://b.jw-cdn.org/apis/mediator/v1/categories/T/LatestVideos?detailed=1&clientType=www"
